@@ -239,7 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_final_clicks_shop      ON final_clicks(shop_id);
 CREATE INDEX IF NOT EXISTS idx_final_clicks_ts        ON final_clicks(timestamp);
 """
 
-def init_db(db_path=None, force_recreate=True):
+def init_db(db_path=None, force_recreate=False):
     """Initialize the Torob database with complete schema.
     
     This function creates a fresh SQLite database with all tables, indexes,
@@ -255,11 +255,11 @@ def init_db(db_path=None, force_recreate=True):
         bool: True if database was created successfully, False otherwise.
         
     Example:
-        >>> # Create fresh database (removes existing)
+        >>> # Create only if doesn't exist (default behavior)
         >>> init_db()
         
-        >>> # Create only if doesn't exist
-        >>> init_db(force_recreate=False)
+        >>> # Force recreate existing database
+        >>> init_db(force_recreate=True)
         
         >>> # Create at custom location
         >>> init_db("/path/to/custom/database.db")
@@ -276,13 +276,29 @@ def init_db(db_path=None, force_recreate=True):
         # Ensure data directory exists
         ensure_data_directory()
         
-        # Remove existing database if force_recreate is True
-        if force_recreate and os.path.exists(db_path):
-            Path(db_path).unlink()
-            print(f"🗑️ Removed existing database: {db_path}")
-        elif not force_recreate and os.path.exists(db_path):
-            print(f"✅ Database already exists: {db_path}")
-            return True
+        # Check if database already exists and has data
+        if os.path.exists(db_path):
+            if not force_recreate:
+                # Check if database has data (not just empty schema)
+                try:
+                    con = sqlite3.connect(db_path)
+                    cursor = con.execute("SELECT COUNT(*) FROM base_products")
+                    product_count = cursor.fetchone()[0]
+                    con.close()
+                    
+                    if product_count > 0:
+                        print(f"✅ Database already exists with {product_count:,} products: {db_path}")
+                        print(f"📊 Dataset is already loaded. Skipping database creation.")
+                        return True
+                    else:
+                        print(f"⚠️ Database exists but is empty. Recreating...")
+                        Path(db_path).unlink()
+                except Exception as e:
+                    print(f"⚠️ Database exists but may be corrupted. Recreating... ({e})")
+                    Path(db_path).unlink()
+            else:
+                print(f"🗑️ Force recreate enabled. Removing existing database: {db_path}")
+                Path(db_path).unlink()
         
         print(f"🏗️ Creating database: {db_path}")
         
@@ -425,15 +441,29 @@ if __name__ == "__main__":
     # Check command line arguments
     if len(sys.argv) > 1 and sys.argv[1] == '--info':
         show_schema_info()
+    elif len(sys.argv) > 1 and sys.argv[1] == '--force':
+        # Force recreate database
+        print("🔄 Force recreating database...")
+        success = init_db(force_recreate=True)
+        if success:
+            print(f"\n🚀 Next steps:")
+            print(f"   1. Load data: python -m db.load_db")
+            print(f"   2. Verify: python -m db.verify_data")
+            print(f"   3. Preview: python -m db.preview_data")
+        else:
+            print(f"❌ Database creation failed!")
+            sys.exit(1)
     else:
-        # Create the database
+        # Create the database only if it doesn't exist or is empty
         success = init_db()
         if success:
             print(f"\n🚀 Next steps:")
             print(f"   1. Load data: python -m db.load_db")
             print(f"   2. Verify: python -m db.verify_data")
             print(f"   3. Preview: python -m db.preview_data")
-            print(f"\n💡 For schema info: python -m db.create_db --info")
+            print(f"\n💡 Options:")
+            print(f"   --info: Show schema information")
+            print(f"   --force: Force recreate database")
         else:
             print(f"❌ Database creation failed!")
             sys.exit(1)

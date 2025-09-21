@@ -10,7 +10,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from .models import ChatRequest, ChatResponse, HealthResponse, ErrorResponse
@@ -137,6 +138,110 @@ async def health_check():
         message="Torob AI Assistant API is running",
         version="1.0.0"
     )
+
+
+@app.get("/download/logs")
+async def download_logs():
+    """Download all log files as a zip archive"""
+    import zipfile
+    import io
+    from fastapi.responses import StreamingResponse
+    
+    # Create a zip file in memory
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        log_files = [
+            'logs/api.log',
+            'logs/http_requests.log', 
+            'logs/chat_interactions.log',
+            'logs/errors.log'
+        ]
+        
+        for log_file in log_files:
+            if os.path.exists(log_file):
+                zip_file.write(log_file, os.path.basename(log_file))
+    
+    zip_buffer.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(zip_buffer.read()),
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=torob_logs.zip"}
+    )
+
+
+@app.get("/download/logs/{log_type}")
+async def download_specific_log(log_type: str):
+    """Download a specific log file"""
+    
+    # Define allowed log types
+    allowed_logs = {
+        'api': 'logs/api.log',
+        'http': 'logs/http_requests.log',
+        'chat': 'logs/chat_interactions.log', 
+        'errors': 'logs/errors.log'
+    }
+    
+    if log_type not in allowed_logs:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid log type. Allowed types: {list(allowed_logs.keys())}"
+        )
+    
+    log_file_path = allowed_logs[log_type]
+    
+    if not os.path.exists(log_file_path):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Log file '{log_type}' not found"
+        )
+    
+    return FileResponse(
+        path=log_file_path,
+        filename=f"torob_{log_type}_log.log",
+        media_type="text/plain"
+    )
+
+
+@app.get("/logs/list")
+async def list_logs():
+    """List available log files and their sizes"""
+    
+    log_files = {
+        'api': 'logs/api.log',
+        'http': 'logs/http_requests.log',
+        'chat': 'logs/chat_interactions.log',
+        'errors': 'logs/errors.log'
+    }
+    
+    result = {}
+    
+    for log_type, file_path in log_files.items():
+        if os.path.exists(file_path):
+            file_size = os.path.getsize(file_path)
+            result[log_type] = {
+                'file_path': file_path,
+                'size_bytes': file_size,
+                'size_mb': round(file_size / (1024 * 1024), 2),
+                'download_url': f"/download/logs/{log_type}"
+            }
+        else:
+            result[log_type] = {
+                'file_path': file_path,
+                'size_bytes': 0,
+                'size_mb': 0,
+                'download_url': f"/download/logs/{log_type}",
+                'status': 'not_found'
+            }
+    
+    return result
+
+
+@app.get("/download")
+async def download_page():
+    """Serve the download page"""
+    return FileResponse("download_logs.html")
 
 
 @app.post("/chat", response_model=ChatResponse)
