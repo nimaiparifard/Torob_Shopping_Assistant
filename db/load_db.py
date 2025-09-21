@@ -41,7 +41,7 @@ def map_foreign_key(df: pd.DataFrame, fk_column: str, target_table: str) -> pd.D
         after_count = len(df_copy)
         
         if before_count != after_count:
-            print(f"  ⚠️ Removed {before_count - after_count} rows with invalid foreign keys")
+            print(f"  [WARNING] Removed {before_count - after_count} rows with invalid foreign keys")
         
         # Convert to integer
         df_copy[fk_column] = df_copy[fk_column].astype(int)
@@ -55,14 +55,14 @@ def load_cities(con: sqlite3.Connection, backup_path: str):
     print("Loading cities...")
     df = pd.read_parquet(os.path.join(backup_path, 'cities.parquet'))
     df.to_sql('cities', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} cities")
+    print(f"  [OK] Loaded {len(df)} cities")
 
 def load_brands(con: sqlite3.Connection, backup_path: str):
     """Load brands data (no dependencies)."""
     print("Loading brands...")
     df = pd.read_parquet(os.path.join(backup_path, 'brands.parquet'))
     df.to_sql('brands', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} brands")
+    print(f"  [OK] Loaded {len(df)} brands")
 
 def load_categories(con: sqlite3.Connection, backup_path: str):
     """Load categories data (no FK dependencies, but has self-reference)."""
@@ -74,28 +74,28 @@ def load_categories(con: sqlite3.Connection, backup_path: str):
     df = df.sort_values('parent_id', na_position='first')
     
     df.to_sql('categories', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} categories")
+    print(f"  [OK] Loaded {len(df)} categories")
 
 def load_shops(con: sqlite3.Connection, backup_path: str):
     """Load shops data (depends on cities)."""
     print("Loading shops...")
     df = pd.read_parquet(os.path.join(backup_path, 'shops.parquet'))
     df.to_sql('shops', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} shops")
+    print(f"  [OK] Loaded {len(df)} shops")
 
 def load_base_products(con: sqlite3.Connection, backup_path: str):
     """Load base_products data (depends on categories and brands)."""
     print("Loading base_products...")
     df = pd.read_parquet(os.path.join(backup_path, 'base_products.parquet'))
     df.to_sql('base_products', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} base products")
+    print(f"  [OK] Loaded {len(df)} base products")
 
 def load_members(con: sqlite3.Connection, backup_path: str):
     """Load members data (depends on base_products and shops)."""
     print("Loading members...")
     df = pd.read_parquet(os.path.join(backup_path, 'members.parquet'))
     df.to_sql('members', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} members")
+    print(f"  [OK] Loaded {len(df)} members")
 
 def load_searches(con: sqlite3.Connection, backup_path: str):
     """Load searches data with string-to-integer ID conversion."""
@@ -117,7 +117,7 @@ def load_searches(con: sqlite3.Connection, backup_path: str):
     df = df.sort_values(['uid', 'page'], na_position='first')
     
     df.to_sql('searches', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} searches")
+    print(f"  [OK] Loaded {len(df)} searches")
 
 def load_search_results(con: sqlite3.Connection, backup_path: str):
     """Load search results data by normalizing the result_base_product_rks JSON arrays."""
@@ -160,9 +160,9 @@ def load_search_results(con: sqlite3.Connection, backup_path: str):
     if search_results_data:
         results_df = pd.DataFrame(search_results_data)
         results_df.to_sql('search_results', con, if_exists='replace', index=False)
-        print(f"  ✓ Loaded {len(results_df)} search results")
+        print(f"  [OK] Loaded {len(results_df)} search results")
     else:
-        print("  ⚠️ No search results data found")
+        print("  [WARNING] No search results data found")
 
 def load_base_views(con: sqlite3.Connection, backup_path: str):
     """Load base_views data (depends on searches and base_products)."""
@@ -181,7 +181,7 @@ def load_base_views(con: sqlite3.Connection, backup_path: str):
     # base_product_rk stays as string (references base_products.random_key which is TEXT)
     
     df.to_sql('base_views', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} base views")
+    print(f"  [OK] Loaded {len(df)} base views")
 
 def load_final_clicks(con: sqlite3.Connection, backup_path: str):
     """Load final_clicks data (depends on base_views and shops)."""
@@ -200,7 +200,7 @@ def load_final_clicks(con: sqlite3.Connection, backup_path: str):
     # shop_id is already integer and references shops.id
     
     df.to_sql('final_clicks', con, if_exists='replace', index=False)
-    print(f"  ✓ Loaded {len(df)} final clicks")
+    print(f"  [OK] Loaded {len(df)} final clicks")
 
 def load_all_data():
     """Load all parquet files into SQLite database in the correct order based on FK dependencies."""
@@ -239,7 +239,7 @@ def load_all_data():
         
         con.commit()
         print("=" * 50)
-        print("✅ All data loaded successfully!")
+        print("[SUCCESS] All data loaded successfully!")
         
         # Display summary statistics
         print("\n📊 Database Summary:")
@@ -252,7 +252,7 @@ def load_all_data():
             print(f"  {table}: {count:,} rows")
             
     except Exception as e:
-        print(f"❌ Error loading data: {e}")
+        print(f"[ERROR] Error loading data: {e}")
         if con:
             con.rollback()
         raise

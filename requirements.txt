@@ -26,3 +26,9 @@ python-dotenv>=1.0.0
 
 # File download and extraction
 gdown>=4.7.0
+
+# Memory monitoring and system utilities
+psutil>=5.9.0
+
+# Database and data processing
+sqlite3  # Built-in with Python

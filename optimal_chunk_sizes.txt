@@ -1,0 +1,17 @@
+Optimal Chunk Sizes for Memory < 2GB
+========================================
+
+Table-specific recommendations:
+cities: 5,000 rows
+brands: 1,000 rows
+categories: 2,000 rows
+shops: 1,000 rows
+base_products: 1,000 rows
+members: 500 rows
+searches: 3,000 rows
+base_views: 4,000 rows
+final_clicks: 3,000 rows
+
+Conservative recommendation: 500 rows
+
+This conservative size should work for all tables.
