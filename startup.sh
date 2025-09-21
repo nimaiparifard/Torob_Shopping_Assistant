@@ -25,7 +25,7 @@ python -m db.load_db_optimized --table shops --chunk-size 5000
 python -m db.load_db_optimized --table final_clicks --chunk-size 5000
 
 echo "   Loading large tables with chunk size 1,000 (memory < 2GB)..."
-python -m db.load_db_optimized --table base_products --chunk-size 1000
+python -m db.load_db_optimized --table base_products --chunk-size 2000
 python -m db.load_db_optimized --table members --chunk-size 5000
 python -m db.load_db_optimized --table searches --chunk-size 5000
 python -m db.load_db_optimized --table search_results --chunk-size 5000
