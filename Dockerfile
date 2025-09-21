@@ -54,7 +54,9 @@ RUN mkdir -p /app/data /app/logs
 
 # Set proper permissions
 RUN chown -R appuser:appuser /app
-#RUN chmod +x run_api.py
+
+# Make startup script executable
+RUN chmod +x /app/startup.sh
 
 # Switch to non-root user
 USER appuser
@@ -66,8 +68,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run the application
-#CMD ["python", "export_project.py"]
-#CMD ["python", "db/create_db.py"]
-#CMD ["python", "db/load_db.py"]
-CMD ["python", "run_api.py"]
+# Run the complete startup process
+CMD ["/app/startup.sh"]
