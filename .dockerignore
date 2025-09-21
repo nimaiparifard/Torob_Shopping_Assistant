@@ -6,7 +6,6 @@ data/
 *.pyc
 __pycache__/
 *.log
-.env
 .git/
 .gitignore
 README.md
