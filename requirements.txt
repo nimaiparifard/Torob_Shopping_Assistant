@@ -1,0 +1,24 @@
+pandas>=2.0.0
+pyarrow>=10.0.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+pydantic>=2.0.0
+numpy>=1.24.0
+
+# Router dependencies
+openai>=1.0.0
+langgraph>=0.2.0
+langchain>=0.1.0
+langchain-core>=0.1.0
+tiktoken>=0.5.0
+
+# Optional for vector storage
+qdrant-client>=1.7.0
+faiss-cpu>=1.7.4
+
+# For async operations
+aiofiles>=23.0.0
+asyncio>=3.4.3
+
+# Environment variables
+python-dotenv>=1.0.0
