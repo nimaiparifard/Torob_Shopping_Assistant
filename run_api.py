@@ -5,8 +5,21 @@ Starts the FastAPI server with proper configuration
 """
 
 import os
-import uvicorn
-from api.main import app
+import sys
+import subprocess
+
+# Add the app directory to Python path
+sys.path.insert(0, '/app')
+
+try:
+    import uvicorn
+    from api.main import app
+except ImportError as e:
+    print(f"Import error: {e}")
+    print("Installing uvicorn...")
+    subprocess.run([sys.executable, "-m", "pip", "install", "uvicorn"], check=True)
+    import uvicorn
+    from api.main import app
 
 if __name__ == "__main__":
     # Get configuration from environment variables
