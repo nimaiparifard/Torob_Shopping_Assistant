@@ -15,7 +15,7 @@ Author: Torob AI Team
 
 import sqlite3
 import os
-from db.create_db import DB_PATH
+from db.config import get_db_path
 
 class DatabaseBaseLoader:
     """
@@ -28,9 +28,9 @@ class DatabaseBaseLoader:
         Initialize database connection.
         
         Args:
-            db_path (str, optional): Path to database file. Defaults to DB_PATH.
+            db_path (str, optional): Path to database file. Defaults to get_db_path().
         """
-        self.db_path = db_path or DB_PATH
+        self.db_path = db_path or get_db_path()
         self.conn = None
         self.connect()
     

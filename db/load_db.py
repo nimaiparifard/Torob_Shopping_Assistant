@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 import os
 from pathlib import Path
-from db.path import get_data_path
+from db.config import get_data_path, get_db_path, get_backup_path, ensure_data_directory
 
 # Global dictionaries to store string-to-integer ID mappings
 id_mappings = {
@@ -48,16 +48,7 @@ def map_foreign_key(df: pd.DataFrame, fk_column: str, target_table: str) -> pd.D
     
     return df_copy
 
-def get_backup_path() -> str:
-    """Return absolute path to the project's backup directory."""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.abspath(os.path.join(current_dir, os.pardir))
-    return os.path.join(repo_root, 'backup')
-
-def get_db_path() -> str:
-    """Return the path to the SQLite database file."""
-    from db.create_db import DB_PATH
-    return DB_PATH
+# Use the centralized configuration functions
 
 def load_cities(con: sqlite3.Connection, backup_path: str):
     """Load cities data (no dependencies)."""
@@ -217,9 +208,7 @@ def load_all_data():
     db_path = get_db_path()
     
     # Ensure data directory exists
-    data_dir = os.path.dirname(db_path)
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir, exist_ok=True)
+    ensure_data_directory()
     
     print(f"Loading data from: {backup_path}")
     print(f"Into database: {db_path}")

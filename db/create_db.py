@@ -25,27 +25,10 @@ import sqlite3
 from pathlib import Path
 import os
 from datetime import datetime
-
-def get_data_path() -> str:
-    """Return absolute path to the project's `data` directory.
-
-    Works relative to this file to avoid relying on CWD or environment.
-    This ensures the database is always created in the correct location
-    regardless of where the script is run from.
-    
-    Returns:
-        str: Absolute path to the data directory
-        
-    Example:
-        >>> path = get_data_path()
-        >>> print(path)  # /path/to/project/data
-    """
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.abspath(os.path.join(current_dir, os.pardir))
-    return os.path.join(repo_root, 'data')
+from db.config import get_data_path, get_db_path, ensure_data_directory
 
 # Global database path - used throughout the application
-DB_PATH = os.path.join(get_data_path(), 'torob.db')
+DB_PATH = get_db_path()
 
 ddl = """
 -- ================================================================
@@ -256,7 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_final_clicks_shop      ON final_clicks(shop_id);
 CREATE INDEX IF NOT EXISTS idx_final_clicks_ts        ON final_clicks(timestamp);
 """
 
-def init_db(db_path=DB_PATH, force_recreate=True):
+def init_db(db_path=None, force_recreate=True):
     """Initialize the Torob database with complete schema.
     
     This function creates a fresh SQLite database with all tables, indexes,
@@ -286,11 +269,12 @@ def init_db(db_path=DB_PATH, force_recreate=True):
         OSError: If file system operations fail
     """
     try:
+        # Use default path if not provided
+        if db_path is None:
+            db_path = DB_PATH
+        
         # Ensure data directory exists
-        data_dir = os.path.dirname(db_path)
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir, exist_ok=True)
-            print(f"📁 Created data directory: {data_dir}")
+        ensure_data_directory()
         
         # Remove existing database if force_recreate is True
         if force_recreate and os.path.exists(db_path):
