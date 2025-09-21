@@ -237,25 +237,34 @@ async def download_logs():
     import io
     from fastapi.responses import StreamingResponse
     
-    # Create a zip file in memory
-    zip_buffer = io.BytesIO()
-    
-    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        log_files = [
-            'logs/api.log',
-            'logs/http_requests.log', 
-            'logs/chat_interactions.log',
-            'logs/errors.log'
-        ]
+    def create_zip():
+        # Create a zip file in memory
+        zip_buffer = io.BytesIO()
         
-        for log_file in log_files:
-            if os.path.exists(log_file):
-                zip_file.write(log_file, os.path.basename(log_file))
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            log_files = [
+                'logs/api.log',
+                'logs/http_requests.log', 
+                'logs/chat_interactions.log',
+                'logs/errors.log'
+            ]
+            
+            for log_file in log_files:
+                if os.path.exists(log_file):
+                    # Read file in chunks to handle large files
+                    with open(log_file, 'rb') as f:
+                        zip_file.writestr(os.path.basename(log_file), f.read())
+        
+        zip_buffer.seek(0)
+        return zip_buffer
     
-    zip_buffer.seek(0)
+    def iter_zip():
+        zip_buffer = create_zip()
+        while chunk := zip_buffer.read(8192):  # Read in 8KB chunks
+            yield chunk
     
     return StreamingResponse(
-        io.BytesIO(zip_buffer.read()),
+        iter_zip(),
         media_type="application/zip",
         headers={"Content-Disposition": "attachment; filename=torob_logs.zip"}
     )
@@ -264,6 +273,7 @@ async def download_logs():
 @app.get("/download/logs/{log_type}")
 async def download_specific_log(log_type: str):
     """Download a specific log file"""
+    from fastapi.responses import StreamingResponse
     
     # Define allowed log types
     allowed_logs = {
@@ -287,10 +297,15 @@ async def download_specific_log(log_type: str):
             detail=f"Log file '{log_type}' not found"
         )
     
-    return FileResponse(
-        path=log_file_path,
-        filename=f"torob_{log_type}_log.log",
-        media_type="text/plain"
+    def iter_file():
+        with open(log_file_path, 'rb') as f:
+            while chunk := f.read(8192):  # Read in 8KB chunks
+                yield chunk
+    
+    return StreamingResponse(
+        iter_file(),
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename=torob_{log_type}_log.log"}
     )
 
 
