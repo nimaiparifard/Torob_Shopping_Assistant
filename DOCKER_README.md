@@ -50,7 +50,7 @@ For production deployment, use the optimized multi-stage build:
 
 ```bash
 # Build production image
-docker build -f Dockerfile.prod -t torob-ai-assistant:prod .
+docker build -f Dockerfile -t torob-ai-assistant:prod .
 
 # Run production container
 docker run -d \
@@ -112,7 +112,7 @@ docker-compose build --no-cache
 
 ```bash
 # Build production image
-docker build -f Dockerfile.prod -t torob-ai-assistant:prod .
+docker build -f Dockerfile -t torob-ai-assistant:prod .
 
 # Run with volume mounts
 docker run -d \
