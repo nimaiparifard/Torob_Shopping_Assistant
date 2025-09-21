@@ -6,6 +6,14 @@ Downloads tar.gz file if it doesn't exist, then extracts to backup folder
 import os
 import tarfile
 import gdown
+from pathlib import Path
+
+
+def ensure_gdown_cache():
+    """Ensure gdown cache directory exists and is writable."""
+    cache_dir = Path.home() / '.cache' / 'gdown'
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    print(f"📁 Ensured gdown cache directory: {cache_dir}")
 
 
 def download_tar_gz(file_id, filename):
@@ -22,6 +30,9 @@ def download_tar_gz(file_id, filename):
     if os.path.exists(filename):
         print(f"✅ File already exists: {filename}")
         return filename
+    
+    # Ensure gdown cache directory exists
+    ensure_gdown_cache()
     
     print(f"📥 Downloading {filename} from Google Drive...")
     try:

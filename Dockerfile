@@ -50,10 +50,10 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p /app/data /app/logs
+RUN mkdir -p /app/data /app/logs /home/appuser/.cache/gdown
 
 # Set proper permissions
-RUN chown -R appuser:appuser /app
+RUN chown -R appuser:appuser /app /home/appuser/.cache
 
 # Make startup script executable
 RUN chmod +x /app/startup.sh

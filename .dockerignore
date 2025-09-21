@@ -1,0 +1,15 @@
+# Ignore backup folder - let the container download it fresh
+backup/
+data/ 
+
+# Ignore other unnecessary files
+*.pyc
+__pycache__/
+*.log
+.env
+.git/
+.gitignore
+README.md
+*.md
+test_*.py
+*_test.py
