@@ -63,14 +63,14 @@ def load_cities(con: sqlite3.Connection, backup_path: str):
     """Load cities data (no dependencies)."""
     print("Loading cities...")
     df = pd.read_parquet(os.path.join(backup_path, 'cities.parquet'))
-    df.to_sql('cities', con, if_exists='append', index=False)
+    df.to_sql('cities', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} cities")
 
 def load_brands(con: sqlite3.Connection, backup_path: str):
     """Load brands data (no dependencies)."""
     print("Loading brands...")
     df = pd.read_parquet(os.path.join(backup_path, 'brands.parquet'))
-    df.to_sql('brands', con, if_exists='append', index=False)
+    df.to_sql('brands', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} brands")
 
 def load_categories(con: sqlite3.Connection, backup_path: str):
@@ -82,28 +82,28 @@ def load_categories(con: sqlite3.Connection, backup_path: str):
     # This ensures parent categories exist before children are inserted
     df = df.sort_values('parent_id', na_position='first')
     
-    df.to_sql('categories', con, if_exists='append', index=False)
+    df.to_sql('categories', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} categories")
 
 def load_shops(con: sqlite3.Connection, backup_path: str):
     """Load shops data (depends on cities)."""
     print("Loading shops...")
     df = pd.read_parquet(os.path.join(backup_path, 'shops.parquet'))
-    df.to_sql('shops', con, if_exists='append', index=False)
+    df.to_sql('shops', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} shops")
 
 def load_base_products(con: sqlite3.Connection, backup_path: str):
     """Load base_products data (depends on categories and brands)."""
     print("Loading base_products...")
     df = pd.read_parquet(os.path.join(backup_path, 'base_products.parquet'))
-    df.to_sql('base_products', con, if_exists='append', index=False)
+    df.to_sql('base_products', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} base products")
 
 def load_members(con: sqlite3.Connection, backup_path: str):
     """Load members data (depends on base_products and shops)."""
     print("Loading members...")
     df = pd.read_parquet(os.path.join(backup_path, 'members.parquet'))
-    df.to_sql('members', con, if_exists='append', index=False)
+    df.to_sql('members', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} members")
 
 def load_searches(con: sqlite3.Connection, backup_path: str):
@@ -125,7 +125,7 @@ def load_searches(con: sqlite3.Connection, backup_path: str):
     # Sort by page to ensure consistent loading order
     df = df.sort_values(['uid', 'page'], na_position='first')
     
-    df.to_sql('searches', con, if_exists='append', index=False)
+    df.to_sql('searches', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} searches")
 
 def load_search_results(con: sqlite3.Connection, backup_path: str):
@@ -168,7 +168,7 @@ def load_search_results(con: sqlite3.Connection, backup_path: str):
     # Convert to DataFrame and load to database
     if search_results_data:
         results_df = pd.DataFrame(search_results_data)
-        results_df.to_sql('search_results', con, if_exists='append', index=False)
+        results_df.to_sql('search_results', con, if_exists='replace', index=False)
         print(f"  ✓ Loaded {len(results_df)} search results")
     else:
         print("  ⚠️ No search results data found")
@@ -189,7 +189,7 @@ def load_base_views(con: sqlite3.Connection, backup_path: str):
     
     # base_product_rk stays as string (references base_products.random_key which is TEXT)
     
-    df.to_sql('base_views', con, if_exists='append', index=False)
+    df.to_sql('base_views', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} base views")
 
 def load_final_clicks(con: sqlite3.Connection, backup_path: str):
@@ -208,7 +208,7 @@ def load_final_clicks(con: sqlite3.Connection, backup_path: str):
     
     # shop_id is already integer and references shops.id
     
-    df.to_sql('final_clicks', con, if_exists='append', index=False)
+    df.to_sql('final_clicks', con, if_exists='replace', index=False)
     print(f"  ✓ Loaded {len(df)} final clicks")
 
 def load_all_data():
