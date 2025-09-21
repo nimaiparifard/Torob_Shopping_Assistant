@@ -22,3 +22,6 @@ asyncio>=3.4.3
 
 # Environment variables
 python-dotenv>=1.0.0
+
+# File download and extraction
+gdown>=4.7.0

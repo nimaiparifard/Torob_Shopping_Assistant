@@ -52,7 +52,7 @@ RUN mkdir -p /app/data /app/logs
 
 # Set proper permissions
 RUN chown -R appuser:appuser /app
-RUN chmod +x run_api.py
+#RUN chmod +x run_api.py
 
 # Switch to non-root user
 USER appuser
