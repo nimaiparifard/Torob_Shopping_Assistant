@@ -68,4 +68,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 CMD ["python", "export_project.py"]
 CMD ["python", "db/create_db.py"]
 CMD ["python", "db/load_db.py"]
-CMD ["python", "run_api.py"]
+CMD ["uvicorn", "run_api:app", "--host", "0.0.0.0", "--port", "8000"]
