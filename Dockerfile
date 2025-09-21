@@ -52,8 +52,14 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p /app/data /app/logs /home/appuser/.cache/gdown
 
+# Create log files with proper permissions
+RUN touch /app/logs/api.log /app/logs/http_requests.log /app/logs/chat_interactions.log /app/logs/errors.log
+
 # Set proper permissions
 RUN chown -R appuser:appuser /app /home/appuser/.cache
+
+# Verify log files are working (run as root before switching to appuser)
+RUN python verify_logs.py
 
 # Make startup script executable
 RUN chmod +x /app/startup.sh

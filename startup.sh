@@ -33,6 +33,13 @@ set -e  # Exit on any error
 
 echo "✅ All database tables loaded successfully!"
 
-# Step 4: Start the API server
-echo "🌐 Step 4: Starting API server..."
+# Step 4: Ensure log files exist
+echo "📝 Step 4: Ensuring log files exist..."
+mkdir -p /app/logs
+touch /app/logs/api.log /app/logs/http_requests.log /app/logs/chat_interactions.log /app/logs/errors.log
+chmod 666 /app/logs/*.log
+echo "✅ Log files created and permissions set!"
+
+# Step 5: Start the API server
+echo "🌐 Step 5: Starting API server..."
 python run_api.py

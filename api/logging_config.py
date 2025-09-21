@@ -89,7 +89,7 @@ def setup_logging():
 
 
 def log_http_request(method: str, path: str, client_ip: str, status_code: int, 
-                    process_time: float, body: str = None, headers: dict = None):
+                    process_time: float, body: str = None, headers: dict = None, response: str = None):
     """Log HTTP request details to the dedicated HTTP logger"""
     http_logger = logging.getLogger('http_requests')
     
@@ -121,7 +121,8 @@ def log_http_request(method: str, path: str, client_ip: str, status_code: int,
         'status_code': status_code,
         'process_time': f"{process_time:.4f}s",
         'body': body,
-        'headers': headers
+        'headers': headers,
+        'response': response
     }
     
     http_logger.info(f"HTTP Request: {log_data}")

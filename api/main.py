@@ -5,10 +5,12 @@ Main FastAPI application for Torob AI Assistant
 import os
 import asyncio
 import logging
+import time
+import json
 from typing import Dict, Any, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,14 +25,15 @@ from .validators import (
     validate_message_type, validate_text_content, validate_image_content,
     validate_chat_id, validate_random_keys, sanitize_response_message
 )
+from .logging_config import setup_logging, log_http_request, log_chat_interaction
 from router.main_router import MainRouter
 from router.base import RouterConfig, RouterState
 from agents.general_agent import GeneralAgent
 from agents.specific_product import SpecificProductAgent
 from agents.features_product import FeaturesProductAgent
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure enhanced logging
+setup_logging()
 logger = logging.getLogger(__name__)
 
 # Global variables for router and agents
@@ -128,6 +131,93 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all HTTP requests, especially POST requests"""
+    start_time = time.time()
+    
+    # Get client IP
+    client_ip = request.client.host if request.client else "unknown"
+    
+    # Log request details
+    logger.info(f"Request started: {request.method} {request.url.path}")
+    logger.info(f"Client IP: {client_ip}")
+    logger.info(f"Headers: {dict(request.headers)}")
+    
+    # For POST requests, log the body
+    body_content = None
+    if request.method == "POST":
+        try:
+            # Read the request body
+            body = await request.body()
+            if body:
+                # Try to parse as JSON for better logging
+                try:
+                    body_json = json.loads(body.decode())
+                    body_content = json.dumps(body_json, indent=2, ensure_ascii=False)
+                    logger.info(f"POST Body (JSON): {body_content}")
+                except json.JSONDecodeError:
+                    # If not JSON, log as text
+                    body_content = body.decode()
+                    logger.info(f"POST Body (Text): {body_content}")
+            else:
+                logger.info("POST Body: (empty)")
+        except Exception as e:
+            logger.warning(f"Could not read POST body: {e}")
+    
+    # Process the request
+    response = await call_next(request)
+    
+    # Calculate processing time
+    process_time = time.time() - start_time
+    
+    # Log response details
+    logger.info(f"Request completed: {request.method} {request.url.path} - Status: {response.status_code} - Time: {process_time:.4f}s")
+    
+    # Log response content for POST requests
+    response_content = None
+    if request.method == "POST" and response.status_code == 200:
+        try:
+            # Get response body
+            response_body = b""
+            async for chunk in response.body_iterator:
+                response_body += chunk
+            
+            # Try to parse as JSON
+            try:
+                response_json = json.loads(response_body.decode())
+                response_content = json.dumps(response_json, indent=2, ensure_ascii=False)
+                logger.info(f"POST Response (JSON): {response_content}")
+            except json.JSONDecodeError:
+                response_content = response_body.decode()
+                logger.info(f"POST Response (Text): {response_content}")
+            
+            # Create a new response with the body content
+            from fastapi.responses import JSONResponse
+            response = JSONResponse(
+                content=response_json if 'response_json' in locals() else response_body.decode(),
+                status_code=response.status_code,
+                headers=dict(response.headers)
+            )
+        except Exception as e:
+            logger.warning(f"Could not read response body: {e}")
+    
+    # Use enhanced logging for HTTP requests
+    log_http_request(
+        method=request.method,
+        path=request.url.path,
+        client_ip=client_ip,
+        status_code=response.status_code,
+        process_time=process_time,
+        body=body_content,
+        headers=dict(request.headers),
+        response=response_content
+    )
+    
+    return response
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -255,6 +345,9 @@ async def chat(
     This endpoint processes user messages and returns appropriate responses
     with product recommendations and random keys.
     """
+    logger.info(f"Chat request received - Chat ID: {request.chat_id}, Messages count: {len(request.messages)}")
+    chat_start_time = time.time()
+    
     try:
         # Validate request
         if not request.messages:
@@ -335,6 +428,22 @@ async def chat(
         response_message = sanitize_response_message(response_message)
         base_random_keys = validate_random_keys(base_random_keys, max_count=10)
         member_random_keys = validate_random_keys(member_random_keys, max_count=10)
+        
+        # Log response details
+        logger.info(f"Chat response prepared - Agent: {final_agent}, Keys count: {len(base_random_keys or [])}")
+        
+        # Calculate total processing time
+        total_process_time = time.time() - chat_start_time
+        
+        # Use enhanced chat logging
+        log_chat_interaction(
+            chat_id=request.chat_id,
+            user_query=user_query,
+            agent_type=final_agent,
+            response_message=response_message,
+            keys_count=len(base_random_keys or []),
+            process_time=total_process_time
+        )
         
         return ChatResponse(
             message=response_message,
