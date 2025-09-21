@@ -16,8 +16,8 @@ echo "🗄️ Step 2: Creating database schema..."
 python db/create_db.py
 
 # Step 3: Load data into database
-echo "📊 Step 3: Loading data into database..."
-python db/load_db.py
+# echo "📊 Step 3: Loading data into database..."
+# python db/load_db.py
 
 # Step 4: Start the API server
 echo "🌐 Step 4: Starting API server..."
