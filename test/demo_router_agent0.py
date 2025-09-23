@@ -144,7 +144,7 @@ async def demo_predefined():
 
 async def main():
     """Main function"""
-    if not os.path.exists(".env"):
+    if not os.path.exists("../.env"):
         print("❌ فایل .env یافت نشد!")
         print("لطفا فایل .env را ایجاد کنید و OPENAI_API_KEY را تنظیم کنید.")
         return

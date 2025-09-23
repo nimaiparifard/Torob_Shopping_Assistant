@@ -308,7 +308,7 @@ Examples:
         print(get_optimization_recommendations(peak_mb, args.chunk_size))
         
         # Save results to file
-        with open('optimized_memory_report.txt', 'w', encoding='utf-8') as f:
+        with open('../optimized_memory_report.txt', 'w', encoding='utf-8') as f:
             f.write("Optimized Load Database Memory Usage Report\n")
             f.write("=" * 50 + "\n\n")
             f.write(format_optimized_stats(stats))

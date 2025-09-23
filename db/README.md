@@ -318,9 +318,10 @@ python -m db.verify_data
 ## 🛠️ Usage Examples
 
 ### Basic Database Operations
+
 ```python
-from db.create_db import init_db, DB_PATH
-from db.load_db import load_all_data
+from db import init_db, DB_PATH
+from db import load_all_data
 from db.verify_data import verify_database
 import sqlite3
 
@@ -341,9 +342,10 @@ verify_database()
 ```
 
 ### Advanced Queries
+
 ```python
 import sqlite3
-from db.create_db import DB_PATH
+from db import DB_PATH
 
 conn = sqlite3.connect(DB_PATH)
 

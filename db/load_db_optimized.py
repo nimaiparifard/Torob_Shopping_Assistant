@@ -23,8 +23,7 @@ import pandas as pd
 import os
 import gc
 import argparse
-from pathlib import Path
-from db.config import get_data_path, get_db_path, get_backup_path, ensure_data_directory
+from db.config import get_db_path, get_backup_path, ensure_data_directory
 
 # Global dictionaries to store string-to-integer ID mappings
 id_mappings = {

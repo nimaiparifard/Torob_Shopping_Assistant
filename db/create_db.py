@@ -24,8 +24,7 @@ Author: Torob AI Team
 import sqlite3
 from pathlib import Path
 import os
-from datetime import datetime
-from db.config import get_data_path, get_db_path, ensure_data_directory
+from db.config import get_db_path, ensure_data_directory
 
 # Global database path - used throughout the application
 DB_PATH = get_db_path()

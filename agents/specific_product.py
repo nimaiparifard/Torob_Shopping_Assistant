@@ -12,13 +12,11 @@ Author: Torob AI Team
 """
 
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
-import json
 
 from db.base import DatabaseBaseLoader
 from router.base import RouterConfig

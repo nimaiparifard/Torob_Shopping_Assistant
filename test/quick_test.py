@@ -76,7 +76,7 @@ async def quick_test():
 
 
 if __name__ == "__main__":
-    if not os.path.exists(".env"):
+    if not os.path.exists("../.env"):
         print("❌ .env file not found!")
         print("Please create .env file with OPENAI_API_KEY")
         sys.exit(1)

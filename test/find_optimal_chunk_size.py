@@ -209,7 +209,7 @@ def main():
     results = test_all_tables_optimal()
     
     # Save results to file
-    with open('optimal_chunk_sizes.txt', 'w') as f:
+    with open('../optimal_chunk_sizes.txt', 'w') as f:
         f.write("Optimal Chunk Sizes for Memory < 2GB\n")
         f.write("=" * 40 + "\n\n")
         f.write("Table-specific recommendations:\n")

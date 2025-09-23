@@ -411,13 +411,20 @@ async def chat(
         routing_decision = result.get("routing_decision")
         final_agent = result.get("final_agent", "GENERAL")
         
+        # Check for simple command responses first
+        base_random_keys = result.get("base_random_keys")
+        member_random_keys = result.get("member_random_keys")
+        
         # Determine response based on agent type and results
         response_message = final_response
-        base_random_keys = None
-        member_random_keys = None
         
+        # Handle simple command responses (ping, return keys) - these take priority
+        if base_random_keys is not None or member_random_keys is not None:
+            # Simple command response - set message to null for key-only responses
+            if base_random_keys or member_random_keys:
+                response_message = None
         # Handle specific product agent response
-        if final_agent == "SPECIFIC_PRODUCT":
+        elif final_agent == "SPECIFIC_PRODUCT":
             specific_response = result.get("specific_product_response", {})
             if specific_response.get("found") and specific_response.get("random_key"):
                 base_random_keys = [specific_response["random_key"]]
@@ -441,8 +448,8 @@ async def chat(
         
         # Validate and sanitize response
         response_message = sanitize_response_message(response_message)
-        base_random_keys = validate_random_keys(base_random_keys, max_count=10)
-        member_random_keys = validate_random_keys(member_random_keys, max_count=10)
+        base_random_keys = validate_random_keys(base_random_keys, max_count=200)
+        member_random_keys = validate_random_keys(member_random_keys, max_count=200)
         
         # Log response details
         logger.info(f"Chat response prepared - Agent: {final_agent}, Keys count: {len(base_random_keys or [])}")

@@ -7,3 +7,5 @@ __pycache__/
 .idea/
 torob-turbo-stage2.tar.gz
 logs/
+test
+test*

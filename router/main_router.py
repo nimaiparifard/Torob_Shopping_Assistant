@@ -89,7 +89,8 @@ class MainRouter(RouterBase):
             self._route_after_hard_signals,
             {
                 "high_confidence": "route_to_agent",
-                "need_more_analysis": "parse_intent"
+                "need_more_analysis": "parse_intent",
+                "finalize": "finalize"
             }
         )
         
@@ -170,6 +171,8 @@ class MainRouter(RouterBase):
                 "routing_decision": result.get("routing_decision"),
                 "final_agent": result.get("final_agent"),
                 "final_response": result.get("final_response"),
+                "base_random_keys": result.get("base_random_keys"),
+                "member_random_keys": result.get("member_random_keys"),
                 "general_agent_response": result.get("general_agent_response"),
                 "specific_product_response": result.get("specific_product_response"),
                 "error": result.get("error")
@@ -191,6 +194,14 @@ class MainRouter(RouterBase):
     async def _detect_hard_signals_node(self, state: RouterGraphState) -> RouterGraphState:
         """Node for hard signal detection"""
         try:
+            user_query = state["user_query"].strip().lower()
+            
+            # Check for simple commands first
+            simple_command_result = self._detect_simple_commands(user_query)
+            if simple_command_result:
+                state["hard_signal_result"] = simple_command_result
+                return state
+            
             router_state = RouterState(
                 user_query=state["user_query"],
                 session_context=state.get("session_context"),
@@ -336,10 +347,31 @@ class MainRouter(RouterBase):
     
     async def _finalize_node(self, state: RouterGraphState) -> RouterGraphState:
         """Finalize routing decision"""
-        # If we got here from hard signals with high confidence
+        # Handle simple commands first - these take priority
+        if state.get("hard_signal_result"):
+            hard_signal = state["hard_signal_result"]
+            if hard_signal.get("confidence", 0) >= 0.8:
+                # Handle simple commands directly
+                if hard_signal.get("simple_response") is not None:
+                    # For ping command, return the simple response
+                    state["final_response"] = hard_signal["simple_response"]
+                    state["final_agent"] = "GENERAL"
+                    return state
+                elif hard_signal.get("base_random_keys") or hard_signal.get("member_random_keys"):
+                    # For random key commands, set message to None and store the keys
+                    state["final_response"] = None
+                    if hard_signal.get("base_random_keys"):
+                        state["base_random_keys"] = hard_signal["base_random_keys"]
+                    if hard_signal.get("member_random_keys"):
+                        state["member_random_keys"] = hard_signal["member_random_keys"]
+                    state["final_agent"] = "GENERAL"
+                    return state
+        
+        # If we got here from hard signals with high confidence but not simple commands
         if not state.get("routing_decision") and state.get("hard_signal_result"):
             hard_signal = state["hard_signal_result"]
             if hard_signal.get("agent") is not None and hard_signal.get("confidence", 0) > 0.8:
+                # Create RouterDecision for other hard signals
                 state["routing_decision"] = RouterDecision(
                     agent=AgentType(hard_signal["agent"]),
                     confidence=hard_signal["confidence"],
@@ -629,12 +661,85 @@ class MainRouter(RouterBase):
         
         return state
     
+    def _detect_simple_commands(self, query: str) -> Optional[Dict[str, Any]]:
+        """Detect simple commands that don't need complex routing"""
+        query = query.strip().lower()
+        
+        # Ping command
+        if query == "ping":
+            return {
+                "agent": "GENERAL",
+                "confidence": 1.0,
+                "matched_patterns": ["ping_command"],
+                "extracted_data": {"command": "ping"},
+                "simple_response": "pong"
+            }
+        
+        # Return base random key command
+        if query.startswith("return base random key:"):
+            key = query.replace("return base random key:", "").strip()
+            if key:
+                return {
+                    "agent": "GENERAL", 
+                    "confidence": 1.0,
+                    "matched_patterns": ["return_base_key"],
+                    "extracted_data": {"command": "return_base_key", "key": key},
+                    "base_random_keys": [key],
+                    "simple_response": None  # No message, just keys
+                }
+        
+        # Return member random key command
+        if query.startswith("return member random key:"):
+            key = query.replace("return member random key:", "").strip()
+            if key:
+                return {
+                    "agent": "GENERAL",
+                    "confidence": 1.0, 
+                    "matched_patterns": ["return_member_key"],
+                    "extracted_data": {"command": "return_member_key", "key": key},
+                    "member_random_keys": [key],
+                    "simple_response": None  # No message, just keys
+                }
+        
+        # Combined command - return both base and member keys
+        if "return base random key:" in query and "return member random key:" in query:
+            base_key = None
+            member_key = None
+            
+            # Extract base key
+            base_match = query.split("return base random key:")[1].split("return member random key:")[0].strip()
+            if base_match:
+                base_key = base_match
+            
+            # Extract member key  
+            member_match = query.split("return member random key:")[1].strip()
+            if member_match:
+                member_key = member_match
+            
+            if base_key or member_key:
+                return {
+                    "agent": "GENERAL",
+                    "confidence": 1.0,
+                    "matched_patterns": ["return_combined_keys"],
+                    "extracted_data": {"command": "return_combined_keys", "base_key": base_key, "member_key": member_key},
+                    "base_random_keys": [base_key] if base_key else None,
+                    "member_random_keys": [member_key] if member_key else None,
+                    "simple_response": None  # No message, just keys
+                }
+        
+        return None
+
     def _route_after_hard_signals(self, state: RouterGraphState) -> str:
         """Decide whether to continue analysis after hard signals"""
         hard_signal = state.get("hard_signal_result", {})
         
         # If we have high confidence hard signal, go directly to route_to_agent
         if hard_signal.get("confidence", 0) >= 0.8 and hard_signal.get("agent") is not None:
+            # For simple commands, go directly to finalize instead of routing to agent
+            if (hard_signal.get("simple_response") is not None or 
+                hard_signal.get("base_random_keys") or 
+                hard_signal.get("member_random_keys")):
+                return "finalize"
             return "high_confidence"
         
         # Otherwise, continue with more analysis

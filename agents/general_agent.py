@@ -30,173 +30,38 @@ class GeneralAgent:
             base_url=config.openai_base_url
         )
         self.model = config.llm_model
-        
-        # Static knowledge base for common policies and information
-        self.static_kb = self._initialize_static_knowledge()
-    
-    def _initialize_static_knowledge(self) -> Dict[str, str]:
-        """Initialize static knowledge base for common questions"""
-        return {
-            "payment_methods": """روش‌های پرداخت قابل قبول:
-            • پرداخت آنلاین با کارت‌های بانکی
-            • پرداخت اقساطی (برای خریدهای بالای یک میلیون تومان)
-            • پرداخت در محل (تحویل درب منزل)
-            • کیف پول دیجیتال
-            • انتقال بانکی""",
-            
-            "return_policy": """قوانین مرجوع کالا:
-            • امکان مرجوع تا 7 روز پس از خرید
-            • کالا باید در بسته‌بندی اصلی و سالم باشد
-            • لوازم الکترونیکی: تا 14 روز
-            • پوشاک و کفش: تا 7 روز (در صورت عدم پوشیدن)
-            • کالاهای فاسدشدنی قابل مرجوع نیستند""",
-            
-            "warranty": """ضمانت اصالت کالا:
-            • تمام کالاها دارای ضمانت اصالت
-            • گارانتی رسمی از شرکت‌های معتبر
-            • خدمات پس از فروش در سراسر کشور
-            • بازگشت 100% وجه در صورت غیراصل بودن""",
-            
-            "working_hours": """ساعت کاری پشتیبانی:
-            • شنبه تا چهارشنبه: 8 صبح تا 8 شب
-            • پنج‌شنبه: 8 صبح تا 6 عصر
-            • جمعه: تعطیل
-            • پشتیبانی آنلاین 24/7 در دسترس""",
-            
-            "delivery": """نحوه ارسال و تحویل:
-            • ارسال رایگان برای خریدهای بالای 500 هزار تومان
-            • تحویل سریع در تهران: 24 ساعته
-            • تحویل در سایر شهرها: 2-5 روز کاری
-            • امکان انتخاب زمان دلخواه برای تحویل
-            • تحویل درب منزل یا دفتر""",
-            
-            "how_to_shop": """نحوه خرید:
-            1. جستجوی محصول مورد نظر
-            2. مقایسه قیمت‌ها و انتخاب فروشنده
-            3. اضافه کردن به سبد خرید  
-            4. تکمیل اطلاعات ارسال
-            5. انتخاب روش پرداخت
-            6. تأیید نهایی سفارش
-            7. پیگیری از طریق پیامک""",
-            
-            "account_benefits": """مزایای عضویت:
-            • دریافت تخفیف‌های ویژه اعضا
-            • امتیاز برای هر خرید
-            • اولویت در ارسال و تحویل
-            • دسترسی به پیشنهادات شخصی‌سازی شده
-            • پیگیری آسان سفارشات""",
-            
-            "contact_info": """راه‌های تماس:
-            • تلفن پشتیبانی: 021-91000000
-            • ایمیل: support@torob.com  
-            • چت آنلاین در سایت
-            • شبکه‌های اجتماعی: @torob_official
-            • دفتر مرکزی: تهران، خیابان ولیعصر"""
-        }
     
     def _create_system_prompt(self) -> str:
         """Create system prompt for general questions"""
-        return """شما دستیار خرید هوشمند ترب هستید که به عنوان دستیار عمومی و پیش‌فرض عمل می‌کنید.
+        return """شما یک دستیار عمومی هستید که به سوالات مختلف پاسخ می‌دهید.
 
-شما باید هر نوع سوالی را که کاربر می‌پرسد پاسخ دهید، حتی اگر مشخص نباشد به کدام دسته تعلق دارد.
+وظایف شما:
+- پاسخ به سوالات عمومی و ساده
+- کمک در مواردی که نیاز به راهنمایی دارید
+- پاسخ مؤدب و مفید به زبان فارسی
 
-مسئولیت‌های شما:
-- پاسخ به سوالات عمومی درباره قوانین، نحوه خرید، پشتیبانی
-- کمک در سوالات غیرمشخص یا ابهام‌آمیز
-- راهنمایی کلی برای هر نوع درخواست
-- پاسخ مؤدب، واضح و مفید به زبان فارسی
+اصول:
+1. پاسخ کوتاه و مفید بدهید
+2. اگر سوال مشخص نیست، توضیح بخواهید
+3. همیشه مؤدب باشید
 
-اصول مهم:
-1. همیشه سعی کنید پاسخی ارائه دهید، حتی اگر سوال مشخص نباشد
-2. اگر سوال مبهم است، سوال توضیحی بپرسید تا بهتر کمک کنید
-3. اگر به اطلاعات خاص نیاز دارید، کاربر را راهنمایی کنید
-4. همیشه مؤدب و صبور باشید
-5. تلاش کنید حداکثر کمک را ارائه دهید
+برای دستورات خاص:
+- "ping" → "pong"
+- "return base random key: [key]" → کلید را در base_random_keys قرار دهید
+- "return member random key: [key]" → کلید را در member_random_keys قرار دهید
 
-برای سوالات تخصصی:
-- محصول خاص: "برای یافتن محصول دقیق، لطفا مدل یا کد محصول را ذکر کنید"
-- مقایسه: "برای مقایسه دقیق، نام محصولات مورد نظر را بگویید"
-- فروشندگان: "برای اطلاعات فروشندگان، نام محصول یا دسته‌بندی را مشخص کنید"
-- جستجو: "می‌توانید محصول مورد نظر و معیارهای انتخاب را توضیح دهید؟"
-
-هدف: ارائه بهترین کمک ممکن در هر شرایطی."""
+هدف: کمک سریع و مؤثر."""
     
     def _create_user_prompt(self, query: str, context: Dict[str, Any]) -> str:
         """Create user prompt with query and context"""
-        prompt = f"سوال کاربر: {query}"
-        
-        # Add relevant static knowledge if available
-        relevant_kb = self._find_relevant_knowledge(query)
-        if relevant_kb:
-            prompt += f"\n\nاطلاعات مرتبط:\n{relevant_kb}"
-        
-        # Add context information
-        if context.get('turn_count', 0) > 0:
-            prompt += f"\n\nاین دور {context['turn_count']} مکالمه است."
-        
-        if context.get('previous_interactions'):
-            prompt += f"\nتعامل قبلی: {context['previous_interactions'][-1]}"
-        
-        prompt += "\n\nلطفا پاسخ مناسب و کاملی ارائه دهید."
-        
-        return prompt
+        return f"سوال: {query}"
     
-    def _find_relevant_knowledge(self, query: str) -> str:
-        """Find relevant static knowledge based on query keywords"""
-        query_lower = query.lower()
-        relevant_info = []
-        
-        # Keywords to knowledge mapping
-        knowledge_keywords = {
-            "payment_methods": ["پرداخت", "پول", "کارت", "اقساط", "حساب", "payment"],
-            "return_policy": ["مرجوع", "برگشت", "عودت", "return", "refund"],
-            "warranty": ["ضمانت", "اصالت", "گارانتی", "warranty", "guarantee"],
-            "working_hours": ["ساعت", "زمان", "کی", "hours", "time", "پشتیبانی", "support"],
-            "delivery": ["ارسال", "تحویل", "delivery", "shipping", "رسیدن"],
-            "how_to_shop": ["چطور", "چگونه", "نحوه", "خرید", "how", "shop", "buy"],
-            "account_benefits": ["عضویت", "اکانت", "حساب", "مزایا", "benefits", "account"],
-            "contact_info": ["تماس", "آدرس", "شماره", "contact", "phone", "email"]
-        }
-        
-        for kb_key, keywords in knowledge_keywords.items():
-            if any(keyword in query_lower for keyword in keywords):
-                if kb_key in self.static_kb:
-                    relevant_info.append(self.static_kb[kb_key])
-        
-        return "\n\n".join(relevant_info) if relevant_info else ""
     
     def _should_handoff(self, query: str, response: str) -> tuple[bool, Optional[str], str]:
         """Determine if query should be handed off to another agent"""
-        query_lower = query.lower()
-        
-        # Only handoff for very specific and clear cases
-        # Since General Agent is now the fallback, be more conservative about handoffs
-        
-        # Very specific product codes/SKUs
-        specific_product_indicators = [
-            "کد ", "sku", "model", "مدل ", " کد", "شناسه"
-        ]
-        
-        # Very clear comparison requests
-        clear_comparison_indicators = [
-            "مقایسه", "تفاوت", "کدوم بهتره", "versus", "در مقابل"
-        ]
-        
-        # Check for very specific product requests with codes
-        if any(indicator in query_lower for indicator in specific_product_indicators):
-            return True, "SPECIFIC_PRODUCT", "درخواست محصول خاص با کد"
-        
-        # Check for clear comparison requests with multiple products mentioned
-        if any(indicator in query_lower for indicator in clear_comparison_indicators):
-            # Check if multiple product names or brands are mentioned
-            brands = ["سامسونگ", "آیفون", "اپل", "شیائومی", "ایسوس", "لنوو"]
-            mentioned_brands = [brand for brand in brands if brand in query_lower]
-            if len(mentioned_brands) >= 2:
-                return True, "COMPARISON", "مقایسه چند محصول/برند"
-        
-        # For now, General Agent handles everything else
-        # This makes it truly general and able to help with unclear queries
-        return False, None, "دستیار عمومی می‌تواند کمک کند"
+        # General agent handles most cases directly now
+        # Only handoff for very specific technical cases
+        return False, None, "دستیار عمومی پاسخ می‌دهد"
     
     async def process_query(
         self, 
@@ -240,11 +105,7 @@ class GeneralAgent:
             print(f"خطا در Agent عمومی: {e}")
             
             # Fallback response
-            fallback_answer = """متأسفم، در حال حاضر مشکل فنی دارم. لطفا دوباره سوال کنید یا با پشتیبانی تماس بگیرید.
-            
-راه‌های تماس:
-• تلفن: 021-91000000
-• ایمیل: support@torob.com"""
+            fallback_answer = "متأسفم، در حال حاضر مشکل فنی دارم. لطفا دوباره تلاش کنید."
             
             return GeneralAgentResponse(
                 answer=fallback_answer,
@@ -256,23 +117,18 @@ class GeneralAgent:
     def get_sample_questions(self) -> list[str]:
         """Get sample questions this agent can handle"""
         return [
-            # Policy and general questions
-            "چطور می‌تونم از سایت خرید کنم؟",
-            "ساعت کاری پشتیبانی چیه؟",
-            "آیا امکان مرجوع کردن کالا وجود دارد؟",
-            "نحوه پرداخت چگونه است؟",
-            "آیا ضمانت اصالت کالا دارید؟",
-            "مزایای عضویت چیست؟",
-            "چطور با پشتیبانی تماس بگیرم؟",
-            "هزینه ارسال چقدر است؟",
+            # Simple commands
+            "ping",
+            "return base random key: f1a4fc11-1188-4bc8-81d1-2d8af2b3793d",
+            "return member random key: f2b5fc22-2299-5cd9-92e2-3e9bf3c4804e",
             
-            # General/unclear questions that should be handled here
-            "سلام خوبی؟",
-            "یه چیزی میخوام ولی نمیدونم چی",
+            # General questions
+            "سلام",
             "کمک میخوام",
-            "نمیدونم چطور شروع کنم",
-            "توضیح بده این سایت چیکار میکنه",
-            "راهنماییم کن",
-            "احتیاج به کمک دارم",
-            "چه خدماتی ارائه میدین؟"
+            "چطور میتونم کمکتون کنم؟",
+            "چه خبر؟",
+            "خوبی؟",
+            "چیکار می‌کنی؟",
+            "کمک می‌خوام",
+            "راهنماییم کن"
         ]

@@ -258,7 +258,7 @@ def main():
         print(get_memory_recommendations(peak_mb))
         
         # Save results to file
-        with open('memory_usage_report.txt', 'w', encoding='utf-8') as f:
+        with open('../memory_usage_report.txt', 'w', encoding='utf-8') as f:
             f.write("Load Database Memory Usage Report\n")
             f.write("=" * 40 + "\n\n")
             f.write(format_detailed_stats(stats))

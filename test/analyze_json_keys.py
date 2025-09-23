@@ -116,7 +116,7 @@ def analyze_json_keys():
                 continue
         
         # Save results to file
-        output_file = "json_keys_analysis.txt"
+        output_file = "../json_keys_analysis.txt"
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write("JSON KEYS ANALYSIS - extra_features FIELD\n")
             f.write("=" * 50 + "\n\n")
