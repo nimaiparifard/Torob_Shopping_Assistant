@@ -59,8 +59,8 @@ def check_response_logs():
     import os
     
     # Check http_requests.log for response content
-    if os.path.exists('logs/http_requests.log'):
-        with open('logs/http_requests.log', 'r', encoding='utf-8') as f:
+    if os.path.exists('../logs/http_requests.log'):
+        with open('../logs/http_requests.log', 'r', encoding='utf-8') as f:
             content = f.read()
             if 'response_test_123' in content:
                 print("   ✅ http_requests.log: Contains our test request")
@@ -74,8 +74,8 @@ def check_response_logs():
         print("   ❌ http_requests.log: File not found")
     
     # Check chat_interactions.log
-    if os.path.exists('logs/chat_interactions.log'):
-        with open('logs/chat_interactions.log', 'r', encoding='utf-8') as f:
+    if os.path.exists('../logs/chat_interactions.log'):
+        with open('../logs/chat_interactions.log', 'r', encoding='utf-8') as f:
             content = f.read()
             if 'response_test_123' in content:
                 print("   ✅ chat_interactions.log: Contains our test request")

@@ -13,7 +13,7 @@ def test_download():
     
     # Configuration
     FILE_ID = "1W4mSI33IbeKkWztK3XmE05F7m4tNYDYu"
-    TAR_GZ_FILENAME = "torob-turbo-stage2.tar.gz"
+    TAR_GZ_FILENAME = "../torob-turbo-stage2.tar.gz"
     BACKUP_FOLDER = "backup"
     
     # Remove existing files to test fresh download

@@ -22,7 +22,7 @@ def verify_log_files():
     ]
     
     # Check if logs directory exists
-    logs_dir = Path('logs')
+    logs_dir = Path('../logs')
     if not logs_dir.exists():
         print("❌ logs directory does not exist")
         print("   Creating logs directory...")
@@ -69,7 +69,7 @@ def verify_log_files():
         # Test HTTP request logging
         log_http_request(
             method="GET",
-            path="/test",
+            path="",
             client_ip="127.0.0.1",
             status_code=200,
             process_time=0.1,

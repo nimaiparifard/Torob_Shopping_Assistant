@@ -237,7 +237,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Check if .env exists
-    env_path = ".env"
+    env_path = "../.env"
     if not os.path.exists(env_path):
         print(f"⚠️  فایل .env یافت نشد")
         print(f"💡 لطفا فایل .env را با کلید OpenAI ایجاد کنید")

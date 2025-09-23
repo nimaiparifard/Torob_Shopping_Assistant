@@ -16,7 +16,7 @@ def test_docker_logs():
     # Test 1: Check if we can create log files
     print("1. Testing log file creation...")
     try:
-        os.makedirs('logs', exist_ok=True)
+        os.makedirs('../logs', exist_ok=True)
         log_files = ['api.log', 'http_requests.log', 'chat_interactions.log', 'errors.log']
         
         for log_file in log_files:
