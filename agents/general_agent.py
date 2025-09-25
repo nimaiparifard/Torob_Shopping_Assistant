@@ -1,134 +1,132 @@
-"""
-Agent 0: General Q&A Agent
-Handles everyday and common user questions without database access
-"""
-
-from typing import Dict, Any, Optional
+import os
+import json
+from typing import Dict, Any, List
 from openai import AsyncOpenAI
-from dataclasses import dataclass
+from langchain.output_parsers import PydanticOutputParser
+from langchain.schema import OutputParserException
+from langchain.prompts import PromptTemplate
+import dotenv
+from response_format import Response
 
-from router.base import RouterConfig
 
+dotenv.load_dotenv()
 
-@dataclass
-class GeneralAgentResponse:
-    """Response from General Agent"""
-    answer: str
-    confidence: float = 1.0
-    handoff_needed: bool = False
-    handoff_agent: Optional[str] = None
-    reasoning: str = ""
 
 
 class GeneralAgent:
-    """Agent 0: General Q&A - No database access needed"""
-    
-    def __init__(self, config: RouterConfig):
+    def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.client = AsyncOpenAI(
-            api_key=config.openai_api_key,
-            base_url=config.openai_base_url
+            api_key=config['OPENAI_API_KEY'],
+            base_url=os.getenv("OPENAI_URL")
         )
-        self.model = config.llm_model
-    
-    def _create_system_prompt(self) -> str:
-        """Create system prompt for general questions"""
-        return """شما یک دستیار عمومی هستید که به سوالات مختلف پاسخ می‌دهید.
+        self.model = os.getenv("MODEL")
+        # Pydantic parser
+        self.parser = PydanticOutputParser(pydantic_object=Response)
 
-وظایف شما:
-- پاسخ به سوالات عمومی و ساده
-- کمک در مواردی که نیاز به راهنمایی دارید
-- پاسخ مؤدب و مفید به زبان فارسی
+        # System prompt template using jinja2 to avoid brace conflicts in JSON examples
+        self.system_template = PromptTemplate(
+            template=(
+                "You are a general assistant that answers various questions.\n"
+                "Always output valid json that matches the provided schema.\n"
+                "Goal: Extract explicitly requested random keys from varied natural language phrasings.\n\n"
+                "VERB TRIGGERS (case-insensitive): return, output, print, show, give, send, provide.\n"
+                "BASE KEY TRIGGERS (any of): 'base random', 'base random key', 'base key', 'random key'.\n"
+                "MEMBER KEY TRIGGERS (any of): 'member random', 'member random key', 'member key'.\n"
+                "When a trigger phrase appears, capture every contiguous token (alphanumeric / dash / underscore) that follows it until punctuation, a conjunction (and / &), another trigger phrase, or end of line.\n"
+                "UUID (8-4-4-4-12 hex) tokens ALWAYS go to base_random_keys even if a member trigger preceded them (no duplication).\n"
+                "If the phrase is only 'random key' (without 'member') treat as BASE.\n"
+                "Never fabricate tokens. Preserve original casing and characters (including multiple dashes).\n"
+                "Do not split on internal dashes or underscores.\n"
+                "Never put the same exact token in both lists (base takes precedence).\n"
+                "If no keys found for a list, that list is empty.\n"
+                "message: short natural confirmation or direct answer (e.g. 'pong', 'Base random key extracted', 'Member random keys extracted', 'Both key types extracted', or an answer to a general question).\n\n"
+                "Edge Handling:\n"
+                "- Multiple keys after one trigger separated by spaces are all captured.\n"
+                "- If a verb trigger appears after keys already captured, ignore it for those keys.\n"
+                "- Ignore surrounding quotes unless part of the token.\n\n"
+                "Examples:\n"
+                "User: ping -> {\"message\": \"pong\", \"base_random_keys\": [], \"member_random_keys\": []}\n"
+                "User: return base random dfdf -> {\"message\": \"Base random key extracted\", \"base_random_keys\": [\"dfdf\"], \"member_random_keys\": []}\n"
+                "User: return base random key dfdsdvsvxcvxcvf -> {\"message\": \"Base random key extracted\", \"base_random_keys\": [\"dfdsdvsvxcvxcvf\"], \"member_random_keys\": []}\n"
+                "User: return random key dfdASaew23rewfsdf -> {\"message\": \"Base random key extracted\", \"base_random_keys\": [\"dfdASaew23rewfsdf\"], \"member_random_keys\": []}\n"
+                "User: output base random 334345434rfdf -> {\"message\": \"Base random key extracted\", \"base_random_keys\": [\"334345434rfdf\"], \"member_random_keys\": []}\n"
+                "User: output base random key df24325345345df -> {\"message\": \"Base random key extracted\", \"base_random_keys\": [\"df24325345345df\"], \"member_random_keys\": []}\n"
+                "User: print base random key 23233534ytgdf -> {\"message\": \"Base random key extracted\", \"base_random_keys\": [\"23233534ytgdf\"], \"member_random_keys\": []}\n"
+                "User: return base random 123e4567-e89b-12d3-a456-426614174000 -> {\"message\": \"Base random key extracted\", \"base_random_keys\": [\"123e4567-e89b-12d3-a456-426614174000\"], \"member_random_keys\": []}\n"
+                "User: return member random efs45454gdf -> {\"message\": \"Member random key extracted\", \"base_random_keys\": [], \"member_random_keys\": [\"efs45454gdf\"]}\n"
+                "User: return member key abc-def-123 -> {\"message\": \"Member random key extracted\", \"base_random_keys\": [], \"member_random_keys\": [\"abc-def-123\"]}\n"
+                "User: return both base random 123e4567-e89b-12d3-a456-426614174000 and member random efs45454gdf -> {\"message\": \"Both key types extracted\", \"base_random_keys\": [\"123e4567-e89b-12d3-a456-426614174000\"], \"member_random_keys\": [\"efs45454gdf\"]}\n"
+                "User: show member random k1 k2 k3 -> {\"message\": \"Member random keys extracted\", \"base_random_keys\": [], \"member_random_keys\": [\"k1\", \"k2\", \"k3\"]}\n"
+                "User: give base random key A1 B2 C3 and member random X9 -> {\"message\": \"Both key types extracted\", \"base_random_keys\": [\"A1\", \"B2\", \"C3\"], \"member_random_keys\": [\"X9\"]}\n"
+                "User: What is the capital of France? -> {\"message\": \"Paris\", \"base_random_keys\": [], \"member_random_keys\": []}\n\n"
+                "{{ format_instructions }}"
+            ),
+            input_variables=[],
+            partial_variables={"format_instructions": self.parser.get_format_instructions()},
+            template_format="jinja2"
+        )
 
-اصول:
-1. پاسخ کوتاه و مفید بدهید
-2. اگر سوال مشخص نیست، توضیح بخواهید
-3. همیشه مؤدب باشید
-
-برای دستورات خاص:
-- "ping" → "pong"
-- "return base random key: [key]" → کلید را در base_random_keys قرار دهید
-- "return member random key: [key]" → کلید را در member_random_keys قرار دهید
-
-هدف: کمک سریع و مؤثر."""
-    
-    def _create_user_prompt(self, query: str, context: Dict[str, Any]) -> str:
-        """Create user prompt with query and context"""
-        return f"سوال: {query}"
-    
-    
-    def _should_handoff(self, query: str, response: str) -> tuple[bool, Optional[str], str]:
-        """Determine if query should be handed off to another agent"""
-        # General agent handles most cases directly now
-        # Only handoff for very specific technical cases
-        return False, None, "دستیار عمومی پاسخ می‌دهد"
-    
-    async def process_query(
-        self, 
-        query: str, 
-        context: Optional[Dict[str, Any]] = None
-    ) -> GeneralAgentResponse:
-        """Process user query and return response"""
-        if context is None:
-            context = {}
-        
+    async def process_query(self, query: str) -> Response:
+        system_prompt = self.system_template.format()
         try:
-            # Create LLM prompt
-            system_prompt = self._create_system_prompt()
-            user_prompt = self._create_user_prompt(query, context)
-            
-            # Call LLM
-            response = await self.client.chat.completions.create(
+            chat_response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "user", "content": query}
                 ],
-                temperature=0.3,
-                max_tokens=500
+                response_format={"type": "json_object"}
             )
-            
-            answer = response.choices[0].message.content.strip()
-            
-            # Check if handoff is needed
-            handoff_needed, handoff_agent, reasoning = self._should_handoff(query, answer)
-            
-            return GeneralAgentResponse(
-                answer=answer,
-                confidence=0.9,
-                handoff_needed=handoff_needed,
-                handoff_agent=handoff_agent,
-                reasoning=reasoning
-            )
-            
+            content = chat_response.choices[0].message.content
+            try:
+                return self.parser.parse(content)
+            except OutputParserException:
+                data = json.loads(content)
+                return Response(
+                    message=data.get("message", ""),
+                    base_random_keys=list(data.get("base_random_keys", []) or []),
+                    member_random_keys=list(data.get("member_random_keys", []) or [])
+                )
         except Exception as e:
-            print(f"خطا در Agent عمومی: {e}")
-            
-            # Fallback response
-            fallback_answer = "متأسفم، در حال حاضر مشکل فنی دارم. لطفا دوباره تلاش کنید."
-            
-            return GeneralAgentResponse(
-                answer=fallback_answer,
-                confidence=0.1,
-                handoff_needed=False,
-                reasoning="خطا در پردازش"
-            )
-    
-    def get_sample_questions(self) -> list[str]:
-        """Get sample questions this agent can handle"""
-        return [
-            # Simple commands
-            "ping",
-            "return base random key: f1a4fc11-1188-4bc8-81d1-2d8af2b3793d",
-            "return member random key: f2b5fc22-2299-5cd9-92e2-3e9bf3c4804e",
-            
-            # General questions
-            "سلام",
-            "کمک میخوام",
-            "چطور میتونم کمکتون کنم؟",
-            "چه خبر؟",
-            "خوبی؟",
-            "چیکار می‌کنی؟",
-            "کمک می‌خوام",
-            "راهنماییم کن"
-        ]
+            return Response(message=str(e), base_random_keys=[], member_random_keys=[])
+
+
+# Test harness
+# if __name__ == "__main__":
+#     import asyncio
+#
+#     config = {
+#         "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+#         "OPENAI_URL": os.getenv("OPENAI_URL"),
+#         "MODEL": os.getenv("MODEL", "gpt-4o-mini")
+#     }
+#     agent = GeneralAgent(config)
+#
+#     async def test_agent():
+#         prompts = [
+#             "ping",
+#             "return base random dfdf",
+#             "return base random key dfdsdvsvxcvxcvf",
+#             "return random key dfdASaew23rewfsdf",
+#             "output base random 334345434rfdf",
+#             "output base random key df24325345345df",
+#             "print base random key 23233534ytgdf",
+#             "return base random 2435tdvxvxvd",
+#             "return base random 3rgff546tth",
+#             "return member random dfgfhttfdgvxcvsdgdf",
+#             "return member random fdgdfgdfgdfgf",
+#             "return member random gdfgdfgdfsgfdsg",
+#             "return member random dfgdfvswereew",
+#             "return member random dfgfhttdf6566--sdgdf",
+#             "return member random efs45454gdf",
+#             "return member random d54t6et344fg",
+#
+#             "return both base random dfghfnfghtgdfvdfgbfdgdf and member random dfgsdfgdfgfgdfg",
+#             "What is the capital of Iran?"
+#         ]
+#         for p in prompts:
+#             resp = await agent.process_query(p)
+#             print(f"Prompt: {p}\nResponse: {resp}\n")
+#
+#     asyncio.run(test_agent())

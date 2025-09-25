@@ -6,6 +6,7 @@ import logging
 import logging.handlers
 import os
 from datetime import datetime
+from typing import Optional
 
 
 def setup_logging():
@@ -129,7 +130,7 @@ def log_http_request(method: str, path: str, client_ip: str, status_code: int,
 
 
 def log_chat_interaction(chat_id: str, user_query: str, agent_type: str, 
-                        response_message: str, keys_count: int, process_time: float):
+                        response_message: Optional[str], keys_count: int, process_time: float):
     """Log chat interaction details"""
     chat_logger = logging.getLogger('chat_interactions')
     
@@ -158,7 +159,7 @@ def log_chat_interaction(chat_id: str, user_query: str, agent_type: str,
         'chat_id': chat_id,
         'user_query': user_query[:100] + '...' if len(user_query) > 100 else user_query,
         'agent_type': agent_type,
-        'response_length': len(response_message),
+        'response_length': len(response_message) if response_message else 0,
         'keys_count': keys_count,
         'process_time': f"{process_time:.4f}s"
     }

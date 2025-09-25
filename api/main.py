@@ -26,21 +26,15 @@ from .validators import (
     validate_chat_id, validate_random_keys, sanitize_response_message
 )
 from .logging_config import setup_logging, log_http_request, log_chat_interaction
-from router.main_router import MainRouter
-from router.base import RouterConfig, RouterState
-from agents.general_agent import GeneralAgent
-from agents.specific_product import SpecificProductAgent
-from agents.features_product import FeaturesProductAgent
+from router import Router
+from response_format import Response
 
 # Configure enhanced logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Global variables for router and agents
-router: Optional[MainRouter] = None
-general_agent: Optional[GeneralAgent] = None
-specific_product_agent: Optional[SpecificProductAgent] = None
-features_product_agent: Optional[FeaturesProductAgent] = None
+# Global variables for router
+router: Optional[Router] = None
 
 
 @asynccontextmanager
@@ -59,26 +53,11 @@ async def lifespan(app: FastAPI):
 
 async def initialize_services():
     """Initialize all services and agents"""
-    global router, general_agent, specific_product_agent, features_product_agent
+    global router
     
     try:
-        # Load configuration
-        config = RouterConfig(
-            openai_api_key=os.getenv("OPENAI_API_KEY", "your-api-key-here"),
-            openai_base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
-            llm_model=os.getenv("LLM_MODEL", "gpt-4"),
-            embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
-            force_conclusion_turn=int(os.getenv("FORCE_CONCLUSION_TURN", "5"))
-        )
-        
-        # Initialize router
-        router = MainRouter(config)
-        await router.initialize()
-        
-        # Initialize individual agents
-        general_agent = GeneralAgent(config)
-        specific_product_agent = SpecificProductAgent(config)
-        features_product_agent = FeaturesProductAgent(config)
+        # Initialize router with existing configuration
+        router = Router()
         
         logger.info("All services initialized successfully!")
         
@@ -87,32 +66,11 @@ async def initialize_services():
         raise
 
 
-def get_router() -> MainRouter:
+def get_router() -> Router:
     """Dependency to get router instance"""
     if router is None:
         raise HTTPException(status_code=503, detail="Router not initialized")
     return router
-
-
-def get_general_agent() -> GeneralAgent:
-    """Dependency to get general agent instance"""
-    if general_agent is None:
-        raise HTTPException(status_code=503, detail="General agent not initialized")
-    return general_agent
-
-
-def get_specific_product_agent() -> SpecificProductAgent:
-    """Dependency to get specific product agent instance"""
-    if specific_product_agent is None:
-        raise HTTPException(status_code=503, detail="Specific product agent not initialized")
-    return specific_product_agent
-
-
-def get_features_product_agent() -> FeaturesProductAgent:
-    """Dependency to get features product agent instance"""
-    if features_product_agent is None:
-        raise HTTPException(status_code=503, detail="Features product agent not initialized")
-    return features_product_agent
 
 
 # Create FastAPI app
@@ -352,7 +310,7 @@ async def download_page():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
-    router: MainRouter = Depends(get_router)
+    router_instance: Router = Depends(get_router)
 ):
     """
     Main chat endpoint for user interactions
@@ -372,87 +330,77 @@ async def chat(
         if not validate_chat_id(request.chat_id):
             raise HTTPException(status_code=400, detail="Invalid chat ID format")
         
-        # Get the latest message (for now, we only process the last message)
-        latest_message = request.messages[-1]
+        # Process all messages to extract text and image content
+        user_query = ""
+        image_query = None
         
-        # Validate message type
-        validate_message_type(latest_message.type)
+        logger.info(f"Processing {len(request.messages)} messages")
         
-        # For now, only handle text messages
-        if latest_message.type == "image":
-            # Validate image content
-            if not validate_image_content(latest_message.content):
-                raise HTTPException(status_code=400, detail="Invalid image content")
+        for i, message in enumerate(request.messages):
+            logger.info(f"Message {i+1}: type={message.type}, content_length={len(message.content)}")
             
-            return ChatResponse(
-                message="متأسفم، در حال حاضر پردازش تصاویر پشتیبانی نمی‌شود. لطفا سوال خود را به صورت متن ارسال کنید.",
-                base_random_keys=None,
-                member_random_keys=None
-            )
+            # Validate message type
+            validate_message_type(message.type)
+            
+            if message.type == "text":
+                # Extract text content and append to user query
+                text_content = validate_text_content(message.content)
+                if user_query:
+                    user_query += " " + text_content
+                else:
+                    user_query = text_content
+                    
+                # Check if text contains image URL pattern @https://
+                import re
+                image_url_pattern = r'@(https?://[^\s]+)'
+                image_matches = re.findall(image_url_pattern, message.content)
+                if image_matches:
+                    # Use the first image URL found
+                    image_query = image_matches[0]
+                    logger.info(f"Found image URL in text: {image_query}")
+                    
+            elif message.type == "image":
+                # Handle image content - could be base64 or URL with @ prefix
+                image_content = message.content.strip()
+                
+
+                # Extract URL after @ symbol
+                image_url = image_content
+                print(image_url)
+                # Validate URL format
+                if image_url.startswith(('http://', 'https://')):
+                    image_query = image_url
+                    logger.info(f"Found image URL: {image_query}")
+                else:
+                    raise HTTPException(status_code=400, detail="Invalid image URL format")
         
-        # Extract and validate user query
-        user_query = validate_text_content(latest_message.content)
+        # Ensure we have at least some text content
+        if not user_query.strip():
+            user_query = "تصویر"  # Default text for image-only requests
+            
+        logger.info(f"Final query: '{user_query}', Image: {image_query is not None}")
         
-        # Create router state
-        router_state = RouterState(
-            user_query=user_query,
-            session_context={
-                "chat_id": request.chat_id,
-                "previous_interactions": []  # Could be enhanced to store conversation history
-            },
-            turn_count=1  # Could be enhanced to track conversation turns
-        )
+        # Process the query through the existing router
+        response = await router_instance.route(request.chat_id, user_query, image_query)
+
+        # Convert Response object to ChatResponse format
+        response_message = response.message
+        base_random_keys = response.base_random_keys
+        member_random_keys = response.member_random_keys
+
+        logger.info(f"Router response - message: {repr(response_message)}, base_keys: {base_random_keys}, member_keys: {member_random_keys}")
         
-        # Process the query through the router
-        result = await router.process_complete(router_state)
+        # Handle null message case first - return None for JSON null
+        if response_message is None or response_message == "null":
+            response_message = None
+        else:
+            response_message = sanitize_response_message(response_message)
         
-        # Extract response information
-        final_response = result.get("final_response", "متأسفم، خطایی رخ داده است.")
-        routing_decision = result.get("routing_decision")
-        final_agent = result.get("final_agent", "GENERAL")
-        
-        # Check for simple command responses first
-        base_random_keys = result.get("base_random_keys")
-        member_random_keys = result.get("member_random_keys")
-        
-        # Determine response based on agent type and results
-        response_message = final_response
-        
-        # Handle simple command responses (ping, return keys) - these take priority
-        if base_random_keys is not None or member_random_keys is not None:
-            # Simple command response - set message to null for key-only responses
-            if base_random_keys or member_random_keys:
-                response_message = None
-        # Handle specific product agent response
-        elif final_agent == "SPECIFIC_PRODUCT":
-            specific_response = result.get("specific_product_response", {})
-            if specific_response.get("found") and specific_response.get("random_key"):
-                base_random_keys = [specific_response["random_key"]]
-                response_message = f"محصول مورد نظر شما یافت شد: {specific_response.get('product_name', 'نام محصول')}"
-            else:
-                response_message = "متأسفم، محصول مورد نظر شما یافت نشد. لطفا اطلاعات بیشتری ارائه دهید."
-        
-        # Handle features product agent response
-        elif final_agent == "PRODUCT_FEATURE":
-            features_response = result.get("features_product_response", {})
-            if features_response.get("found") and features_response.get("random_key"):
-                base_random_keys = [features_response["random_key"]]
-                response_message = features_response.get("formatted_features", "ویژگی‌های محصول یافت شد.")
-            else:
-                response_message = "متأسفم، ویژگی‌های محصول مورد نظر شما یافت نشد."
-        
-        # Handle general agent response (no specific keys needed)
-        elif final_agent == "GENERAL":
-            # General agent responses don't need specific product keys
-            pass
-        
-        # Validate and sanitize response
-        response_message = sanitize_response_message(response_message)
         base_random_keys = validate_random_keys(base_random_keys, max_count=200)
         member_random_keys = validate_random_keys(member_random_keys, max_count=200)
         
         # Log response details
-        logger.info(f"Chat response prepared - Agent: {final_agent}, Keys count: {len(base_random_keys or [])}")
+        logger.info(f"Chat response prepared - Message: {repr(response_message)}, Keys count: {len(base_random_keys or [])}")
         
         # Calculate total processing time
         total_process_time = time.time() - chat_start_time
@@ -461,17 +409,21 @@ async def chat(
         log_chat_interaction(
             chat_id=request.chat_id,
             user_query=user_query,
-            agent_type=final_agent,
+            agent_type="ROUTER",  # Since we're using the router directly
             response_message=response_message,
             keys_count=len(base_random_keys or []),
             process_time=total_process_time
         )
         
-        return ChatResponse(
+        # Create and return the response
+        chat_response = ChatResponse(
             message=response_message,
             base_random_keys=base_random_keys,
             member_random_keys=member_random_keys
         )
+        
+        logger.info(f"Returning ChatResponse - message: {repr(chat_response.message)}")
+        return chat_response
         
     except HTTPException:
         raise
@@ -480,11 +432,19 @@ async def chat(
         raise HTTPException(status_code=400, detail=e.message)
     except Exception as e:
         logger.error(f"Unexpected error processing chat request: {e}")
-        return ChatResponse(
-            message="متأسفم، خطایی در پردازش درخواست شما رخ داده است. لطفا دوباره تلاش کنید.",
-            base_random_keys=None,
-            member_random_keys=None
-        )
+        # Only return error message for actual processing errors, not for null responses
+        if "null" in str(e).lower() or "none" in str(e).lower():
+            return ChatResponse(
+                message="خطایی در پردازش درخواست شما رخ داده است. لطفا دوباره تلاش کنید.",
+                base_random_keys=None,
+                member_random_keys=None
+            )
+        else:
+            return ChatResponse(
+                message="متأسفم، خطایی در پردازش درخواست شما رخ داده است. لطفا دوباره تلاش کنید.",
+                base_random_keys=None,
+                member_random_keys=None
+            )
 
 
 @app.exception_handler(Exception)

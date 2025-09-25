@@ -1,42 +1,27 @@
 #!/usr/bin/env python3
 """
-Run script for Torob AI Assistant API
-Starts the FastAPI server with proper configuration
+Run the Torob AI Assistant API server
 """
 
+import uvicorn
 import os
 import sys
-import subprocess
+from pathlib import Path
 
-# Add the app directory to Python path
-sys.path.insert(0, '/app')
+# Add the current directory to Python path
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir))
 
-try:
-    import uvicorn
-    from api.main import app
-except ImportError as e:
-    print(f"Import error: {e}")
-    print("Installing uvicorn...")
-    subprocess.run([sys.executable, "-m", "pip", "install", "uvicorn"], check=True)
-    import uvicorn
-    from api.main import app
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
 if __name__ == "__main__":
-    # Get configuration from environment variables
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8000"))
-    reload = os.getenv("RELOAD", "false").lower() == "true"
-    log_level = os.getenv("LOG_LEVEL", "info")
-    
-    print(f"Starting Torob AI Assistant API on {host}:{port}")
-    print(f"Reload mode: {reload}")
-    print(f"Log level: {log_level}")
-    
-    # Run the server
+    # Run the FastAPI server
     uvicorn.run(
         "api.main:app",
-        host=host,
-        port=port,
-        reload=reload,
-        log_level=log_level
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
     )

@@ -76,10 +76,14 @@ def validate_random_keys(keys: Optional[List[str]], max_count: int = 10) -> Opti
     return valid_keys if valid_keys else None
 
 
-def sanitize_response_message(message: str) -> str:
+def sanitize_response_message(message: str) -> Optional[str]:
     """Sanitize response message for safety"""
+    # Handle null case first - return None for JSON null
+    if message is None or message == "null":
+        return None
+    
     if not message:
-        return "پاسخ در دسترس نیست."
+        return None
     
     # Remove potential harmful characters
     sanitized = message.strip()

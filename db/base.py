@@ -84,23 +84,43 @@ class DatabaseBaseLoader:
             self.conn.close()
             self.conn = None
 
+if __name__ == "__main__":
+    db = DatabaseBaseLoader()
 
-db = DatabaseBaseLoader()
+    # Exact match - get random_key for specific persian name
+    persian_name = "فرشینه مخمل دارای ترمزگیر(عرض 1 متر) طرح آشپزخانه کد04"
+    results = db.query("SELECT random_key, extra_features FROM base_products WHERE persian_name = ?", (persian_name,))
+    if results:
+        random_key = results[0]['random_key']
+        extra_features = results[0]['extra_features']
+        print(f"Random key: {random_key}, extra features: {extra_features}")
+    else:
+        print("Product not found")
 
-# Exact match - get random_key for specific persian name
-persian_name = "کمد چهار درب ونوس طوسی"
-results = db.query("SELECT random_key, extra_features FROM base_products WHERE persian_name = ?", (persian_name,))
-if results:
-    random_key = results[0]['random_key']
-    extra_features = results[0]['extra_features']
-    print(f"Random key: {random_key}, extra features: {extra_features}")
-else:
-    print("Product not found")
+    # Partial match - search for products containing a term
+    search_term = "کولر گازی پاکشوما مدل MPF 18CH"
+    search_term_2 = "تریکو جودون 1/30 لاکرا گردباف نوریس"
+    # results = db.query(
+    #     "SELECT random_key, persian_name, extra_features FROM base_products"
+    #     "WHERE persian_name LIKE ?",
+    #     (f"%{search_term}%",)
+    # )
+    # for product in results:
+    #     print(f"{product['persian_name']} -> {product['random_key']} {product['extra_features']}")
 
-# Partial match - search for products containing a term
-search_term = "کمد چهار"
-results = db.query("SELECT random_key, persian_name FROM base_products WHERE persian_name LIKE ?", (f'%{search_term}%',))
-for product in results:
-    print(f"{product['persian_name']} -> {product['random_key']}")
+    results = db.query(
+        """
+        SELECT DISTINCT m.random_key
+        FROM members m
+        JOIN base_products bp ON m.base_random_key = bp.random_key
+        JOIN shops s ON m.shop_id = s.id
+        WHERE m.base_random_key = ? AND s.city_id = ? AND s.score >= ?
+        ORDER BY m.price ASC, m.random_key ASC
+        LIMIT 1
+        """,
+        params=("zxxwse", "248", 1),
+    )
+    print(len(results))
+    print(results[0]['random_key'] if results else "No member found")
 
-db.close()
+    db.close()

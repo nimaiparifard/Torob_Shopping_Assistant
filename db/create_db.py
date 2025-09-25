@@ -156,6 +156,34 @@ CREATE INDEX IF NOT EXISTS idx_members_shop ON members(shop_id);
 CREATE INDEX IF NOT EXISTS idx_members_price ON members(price);
 
 -- =========================
+-- جدول اکتشاف (Exploration)
+-- FK ها:
+--   exploration.base_random_key -> base_products.random_key
+--   exploration.shop_id         -> shops.id
+--   exploration.brand_id        -> brands.id
+--   exploration.category_id     -> categories.id
+-- =========================
+
+CREATE TABLE exploration (
+    chat_id        TEXT PRIMARY KEY,
+    base_random_key  TEXT,
+    shop_id         INTEGER,
+    brand_id        INTEGER,
+    city_id        INTEGER,
+    category_id     INTEGER,
+    lower_price     INTEGER,
+    upper_price     INTEGER,
+    counts          INTEGER,
+    score           REAL NOT NULL DEFAULT 0.0,
+    has_warranty    INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_exploration_base ON exploration(base_random_key);
+CREATE INDEX IF NOT EXISTS idx_exploration_shop ON exploration(shop_id);
+CREATE INDEX IF NOT EXISTS idx_exploration_brand ON exploration(brand_id);
+CREATE INDEX IF NOT EXISTS idx_exploration_category ON exploration(category_id);
+CREATE INDEX IF NOT EXISTS idx_exploration_city ON exploration(city_id);
+
+-- =========================
 -- جدول جستجوها (Searches)
 -- FK ها:
 --   searches.uid -> searches.id (خودارجاع؛ uid=شناسه صفحه صفر همان جستجو)
@@ -406,6 +434,15 @@ def show_schema_info():
             'columns': ['id (PK)', 'base_view_id (FK)', 'shop_id (FK)', 'timestamp'],
             'references': ['base_views.id', 'shops.id'],
             'referenced_by': []
+        },
+        'exploration': {
+            'description': 'Exploration sessions with filters',
+            'columns': ['chat_id (PK)', 'base_random_key (FK)', 'shop_id (FK)',
+                       'brand_id (FK)', 'category_id (FK)', 'lower_price',
+                       'upper_price', 'counts', 'has_warranty'],
+            'references': ['base_products.random_key', 'shops.id',
+                           'brands.id', 'categories.id'],
+            'referenced_by': []
         }
     }
     
@@ -454,7 +491,7 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         # Create the database only if it doesn't exist or is empty
-        success = init_db()
+        success = init_db(force_recreate=True)
         if success:
             print(f"\n🚀 Next steps:")
             print(f"   1. Load data: python -m db.load_db")
