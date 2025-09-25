@@ -29,6 +29,12 @@ class Router:
         )
         from db.base import DatabaseBaseLoader
         self.db = DatabaseBaseLoader()
+    
+    def close(self):
+        """Close database connection and cleanup resources"""
+        if self.db:
+            self.db.close()
+            self.db = None
 
     async def _scenario_task(self, query: str) -> str:
         """
@@ -46,7 +52,7 @@ class Router:
             
             # Call OpenAI API
             response = await self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are a scenario classifier. Always respond with valid JSON only."},
                     {"role": "user", "content": prompt}
@@ -157,6 +163,7 @@ class Router:
         )
         if image_query:
             image_task = await self._route_image_task(query)
+            print("image_task:",  image_task)
             if image_task == "find_main_object":
                 image_agent = ImageAgent()
                 res =  await image_agent.identify_main_object(image_query)
@@ -199,7 +206,9 @@ class Router:
 async def main():
     router = Router()
     prompts = [
-            "سلام! من دنبال یه گیاه بونسای هستم که خیلی خاص و زیبا باشه. می‌خوام برای هدیه دادن استفاده کنم و بهتره که ارسال گل رایگان هم داشته باشه. قیمتش هم حدوداً بین ۳,۷۰۰,۰۰۰ تا ۴,۱۰۰,۰۰۰ تومان باشه. می‌تونید کمکم کنید؟",
+        "کدام یک از یخچال فریزر کمبی جی‌ پلاس مدل M5320 یا یخچال فریزر جی پلاس مدل GRF-P5325 برای خانواده‌های پرجمعیت مناسب‌تر است؟ ",
+        # " متوسط قیمت پکیج دیواری لورچ مدل آدنا ظرفیت ۳۲ هزار چقدر است؟",
+    #         "سلام! من به دنبال یک دستگاه بخور و رطوبت ساز هستم. می‌خواهم از آن برای بهبود کیفیت هوای خانه‌ام استفاده کنم. آیا می‌توانید به من کمک کنید تا یک فروشنده مناسب پیدا کنم؟",
 
             # "کدامیک از محصولات 'دراور فایل کمدی پلاستیکی طرح کودک' با شناسه \"ebolgl\" و 'دراور هوم کت ۴ طبقه بزرگ طرح دار از پلاستیک' با شناسه \"nihvhq\" در فروشگاه‌های بیشتری موجود است و آسان‌تر می‌توان آن را خرید؟",
             #    "ping",

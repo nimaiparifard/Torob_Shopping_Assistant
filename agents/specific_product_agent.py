@@ -1,16 +1,25 @@
 import os
+import sys
 import time
 import json
 from typing import Dict, Any, List
 import re
 from openai import AsyncOpenAI
 from langchain.prompts import PromptTemplate
-from response_format import Response
 import dotenv
-from embedding.classic_embedding  import EmbeddingService, EmbeddingSimilarity
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from response_format import Response
+from embedding.classic_embedding import EmbeddingService, EmbeddingSimilarity
 from embedding.faiss_embedding import EmbeddingServiceWrapper, build_hnsw_from_texts, semantic_search
 from system_prompts.extract_name_system_prompt import extracting_name_system_prompt, extracting_name_samples
+from system_prompts.find_important_part_system_prompt import find_important_part_system_prompt, \
+    find_important_part_samples
+
 dotenv.load_dotenv()
+
 
 class SpecificProductAgent:
     def __init__(self, db_path: str | None = None, embedding_similarity=None):
@@ -29,7 +38,6 @@ class SpecificProductAgent:
         from db.base import DatabaseBaseLoader
         self.db = DatabaseBaseLoader()
 
-
     async def _extract_product_name(self, query: str) -> str:
         """
         Use LLM with strong system prompt and few-shot learning. Returns ONLY product name or 'نامشخص'.
@@ -43,11 +51,11 @@ class SpecificProductAgent:
                 f"ورودی: {sample['input']}\nخروجی: {sample['extracted_name']}"
                 for sample in extracting_name_samples[:5]  # استفاده از 5 نمونه اول
             ])
-            
+
             user_content = f"{few_shot_examples}\n\nورودی: {query}\nخروجی:"
-            
+
             model_name = os.getenv("OPENAI_MODEL") or os.getenv("CHAT_MODEL") or "gpt-4o-mini"
-            
+
             resp = await self.client.chat.completions.create(
                 model=model_name,
                 messages=[
@@ -56,18 +64,18 @@ class SpecificProductAgent:
                 ],
                 temperature=0
             )
-            
+
             extracted = (resp.choices[0].message.content or "").strip()
-            
+
             # اگر خروجی خالی است یا فقط فاصله، نامشخص برگردان
             if not extracted or extracted.isspace():
                 return "نامشخص"
-            
+
             # حذف کاراکترهای اضافی احتمالی
             extracted = extracted.strip('"\'`')
-            
+
             return extracted if extracted else "نامشخص"
-            
+
         except Exception as e:
             print(f"Error in _extract_product_name: {e}")
             return "نامشخص"
@@ -76,59 +84,39 @@ class SpecificProductAgent:
         """Return list of important parts (phrases) of product name using LLM."""
         if not product_name or product_name == "نامشخص":
             return []
-        system_msg = (
-            "دستور:\n"
-            "نام محصولی به شما داده می‌شود. وظیفه شما استخراج بخش‌های مهم همان محصول است.\n"
-            "قوانین:\n"
-            "- فقط کلمات و عبارات مهم ذکر شده در نام محصول را استخراج کن.\n"
-            "- چیزی اضافه نکن و ترتیب را حفظ کن.\n"
-            "- هر بخش در یک خط باشد.\n"
-            "نمونه‌ها:\n"
-            "ورودی: پایه دیواری مدلی F3010 مناسب تلویزیون های سایز ۱۷ تا ۵۵ اینچ\n"
-            "خروجی:\n"
-            "پایه دیواری\n"
-            "مدل F3010\n"
-            "مناسب تلویزیون\n"
-            "سایز ۱۷ تا ۵۵ اینچ\n"
-            "---\n"
-            "ورودی: فرشینه مخمل با ترمزگیر و عرض ۱ متر، طرح آشپزخانه با کد ۰۴\n"
-            "خروجی:\n"
-            "فرشینه مخمل\n"
-            "با ترمزگیر\n"
-            "عرض ۱ متر\n"
-            "طرح آشپزخانه\n"
-            "کد ۰۴\n"
-            "---\n"
-            "ورودی: شمع تزیینی شمعدونی پیچی سبز با ارتفاع ۲۵ سانتی‌متر که ۱ عددی\n"
-            "خروجی:\n"
-            "شمع تزیینی\n"
-            "شمعدونی پیچی\n"
-            "سبز\n"
-            "ارتفاع ۲۵ سانتی‌متر\n"
-            "۱ عددی\n"
-            "اگر نام مشخص نبود فقط بنویس: نامشخص"
-        )
-        user_content = f"نام محصول: {product_name}"
-        model_name = os.getenv("OPENAI_MODEL") or os.getenv("CHAT_MODEL") or "gpt-4o-mini"
+
         try:
+            # استفاده از نمونه‌ها برای few-shot learning
+            few_shot_examples = "\n".join([
+                f"ورودی: {sample['input']}\nخروجی:\n" + "\n".join(sample['important_parts'])
+                for sample in find_important_part_samples[:3]  # استفاده از 3 نمونه اول
+            ])
+
+            user_content = f"{few_shot_examples}\n\nورودی: {product_name}\nخروجی:"
+
+            model_name = os.getenv("OPENAI_MODEL") or os.getenv("CHAT_MODEL") or "gpt-4o-mini"
+
             resp = await self.client.chat.completions.create(
                 model=model_name,
                 messages=[
-                    {"role": "system", "content": system_msg},
+                    {"role": "system", "content": find_important_part_system_prompt},
                     {"role": "user", "content": user_content}
                 ],
                 temperature=0
             )
+
             raw = (resp.choices[0].message.content or "").strip()
             if not raw or raw == "نامشخص":
                 return []
+
             # Normalize lines, drop header variants
             lines = [l.strip() for l in raw.splitlines() if l.strip()]
             cleaned = []
             for l in lines:
-                if l.startswith("بخش") or l.startswith("نام محصول"):
+                if l.startswith("بخش") or l.startswith("نام محصول") or l.startswith("ورودی") or l.startswith("خروجی"):
                     continue
                 cleaned.append(l)
+
             # Deduplicate preserving order
             seen = set()
             parts = []
@@ -137,7 +125,9 @@ class SpecificProductAgent:
                     seen.add(c)
                     parts.append(c)
             return parts
-        except Exception:
+
+        except Exception as e:
+            print(f"Error in _extract_most_important_part: {e}")
             return []
 
     async def search_product(self, product_name: str) -> Dict[str, Any]:
@@ -165,7 +155,7 @@ class SpecificProductAgent:
 
         # IMPORTANT PARTS BASED LIKE SEARCH (before progressive token truncation)
         important_parts = await self._extract_most_important_part(product_name)
-        part_candidates= []
+        part_candidates = []
         total_parts = len([p for p in important_parts if len(p) > 1])
         if total_parts:
             start = time.time()
@@ -188,15 +178,27 @@ class SpecificProductAgent:
                     )
                 except Exception:
                     rows = []
+
+                if len(rows) == 1:
+                    chosen = rows[0]
+                    return {
+                        "random_key": chosen["random_key"],
+                        "persian_name": chosen["persian_name"],
+                        "similarity": 1,
+                        "match_type": "fuzzy"
+                    }
+                temp_part_candidates = []
                 for r in rows:
                     rk = r["random_key"]
                     if rk in seen_keys:
                         continue
                     seen_keys.add(rk)
-                    part_candidates.append({
+                    temp_part_candidates.append({
                         "random_key": rk,
                         "persian_name": r["persian_name"],
                     })
+                if part_candidates and len(part_candidates) > len(temp_part_candidates):
+                    part_candidates = temp_part_candidates
 
             if len(part_candidates) == 1:
                 chosen = part_candidates[0]
@@ -211,8 +213,26 @@ class SpecificProductAgent:
                 embedder = EmbeddingServiceWrapper()
                 # q_emb = await self.embedding_similarity.get_embedding(product_name)
                 cand_names = [c["persian_name"] for c in part_candidates]
-                p = [product_name,]
-                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32, ef_construction=300, ef_search=128)
+                p = [product_name, ]
+                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32, ef_construction=300,
+                                                ef_search=128)
+                hits = await semantic_search(c, p, embedder, top_k=1)
+                if hits[0][0]['score'] > 0.7:
+                    chosen = part_candidates[hits[0][0]['id']]
+                    return {
+                        "random_key": chosen["random_key"],
+                        "persian_name": chosen["persian_name"],
+                        "similarity": float(hits[0][0]['score']),
+                        "match_type": "fuzzy"
+                    }
+
+            if part_candidates:
+                embedder = EmbeddingServiceWrapper()
+                # q_emb = await self.embedding_similarity.get_embedding(product_name)
+                cand_names = [c["persian_name"] for c in part_candidates]
+                p = [product_name, ]
+                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32, ef_construction=300,
+                                                ef_search=128)
                 hits = await semantic_search(c, p, embedder, top_k=1)
                 if hits[0][0]['score'] > 0.7:
                     chosen = part_candidates[hits[0][0]['id']]
@@ -237,6 +257,58 @@ class SpecificProductAgent:
                         )
                     except Exception:
                         rows = []
+                    if len(rows) == 1:
+                        chosen = rows[0]
+                        return {
+                            "random_key": chosen["random_key"],
+                            "persian_name": chosen["persian_name"],
+                            "similarity": 1,
+                            "match_type": "fuzzy"
+                        }
+                    temp_part_candidates = []
+                    for r in rows:
+                        rk = r["random_key"]
+                        if rk in seen_keys:
+                            continue
+                        seen_keys.add(rk)
+                        temp_part_candidates.append({
+                            "random_key": rk,
+                            "persian_name": r["persian_name"],
+                        })
+                    if part_candidates and len(part_candidates) > len(temp_part_candidates):
+                        part_candidates = temp_part_candidates
+
+            if part_candidates:
+                embedder = EmbeddingServiceWrapper()
+                # q_emb = await self.embedding_similarity.get_embedding(product_name)
+                cand_names = [c["persian_name"] for c in part_candidates]
+                p = [product_name, ]
+                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32,
+                                                ef_construction=300,
+                                                ef_search=128)
+                hits = await semantic_search(c, p, embedder, top_k=1)
+                if hits[0][0]['score'] > 0.7:
+                    chosen = part_candidates[hits[0][0]['id']]
+                    return {
+                        "random_key": chosen["random_key"],
+                        "persian_name": chosen["persian_name"],
+                        "similarity": float(hits[0][0]['score']),
+                        "match_type": "fuzzy"
+                    }
+
+            if len(part_candidates) == 0:  # Avoid too many candidates
+                for idx, (part,) in enumerate(itertools.combinations(unique_parts, 1)):
+                    if idx >= max_combos:
+                        break
+                    like_pattern = f"%{part}%"
+                    try:
+                        rows = self.db.query(
+                            "SELECT random_key, persian_name FROM base_products "
+                            "WHERE persian_name LIKE ? LIMIT 100",
+                            (like_pattern,)
+                        )
+                    except Exception:
+                        rows = []
                     for r in rows:
                         rk = r["random_key"]
                         if rk in seen_keys:
@@ -247,16 +319,36 @@ class SpecificProductAgent:
                             "persian_name": r["persian_name"],
                         })
 
-                        # Compute best scored candidate without sorting dicts
+            if part_candidates:
+                embedder = EmbeddingServiceWrapper()
+                # q_emb = await self.embedding_similarity.get_embedding(product_name)
+                cand_names = [c["persian_name"] for c in part_candidates]
+                p = [product_name, ]
+                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32,
+                                                ef_construction=300,
+                                                ef_search=128)
+                hits = await semantic_search(c, p, embedder, top_k=1)
+                if hits[0][0]['score'] > 0.7:
+                    chosen = part_candidates[hits[0][0]['id']]
+                    return {
+                        "random_key": chosen["random_key"],
+                        "persian_name": chosen["persian_name"],
+                        "similarity": float(hits[0][0]['score']),
+                        "match_type": "fuzzy"
+                    }
+
+                    # Compute best scored candidate without sorting dicts
             end = time.time()
-            print(f"Important parts DB search time: {end - start:.2f} seconds, found {len(part_candidates)} candidates from {total_parts} parts")
+            print(
+                f"Important parts DB search time: {end - start:.2f} seconds, found {len(part_candidates)} candidates from {total_parts} parts")
             # print(part_candidates)
             if part_candidates:
                 embedder = EmbeddingServiceWrapper()
                 # q_emb = await self.embedding_similarity.get_embedding(product_name)
                 cand_names = [c["persian_name"] for c in part_candidates]
-                p = [product_name,]
-                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32, ef_construction=300, ef_search=128)
+                p = [product_name, ]
+                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32, ef_construction=300,
+                                                ef_search=128)
                 hits = await semantic_search(c, p, embedder, top_k=1)
                 if hits[0][0]['score'] > 0.7:
                     chosen = part_candidates[hits[0][0]['id']]
@@ -276,7 +368,7 @@ class SpecificProductAgent:
             like_pattern = f"{prefix}%"
             try:
                 result = self.db.query(
-                    "SELECT random_key, persian_name FROM base_products WHERE persian_name LIKE ?",
+                    "SELECT random_key, persian_name FROM base_products WHERE persian_name LIKE ? LIMIT 100",
                     (like_pattern,)
                 )
                 if result:
@@ -306,7 +398,7 @@ class SpecificProductAgent:
                     "match_type": "fuzzy"
                 }
         except Exception:
-            # Fallback: pick longest name overlap
+            # Fallback: pick  name overlap
             chosen = max(candidates, key=lambda c: len(c["persian_name"]))
             return {
                 "random_key": chosen["random_key"],
@@ -315,7 +407,6 @@ class SpecificProductAgent:
                 "match_type": "fallback"
             }
         return {}
-
 
     def norm(self, token: str) -> str:
         """Normalize token by removing punctuation and standardizing characters"""
@@ -329,21 +420,21 @@ class SpecificProductAgent:
         """Remove ALL stopwords from anywhere in the token list"""
         # Expanded list of common Persian stopwords
         STOPWORDS = {
-            'و', 'با', 'که', 'برای', 'از', 'تا', 'در', 'به', 'یک', 'را', 'است', 'هست', 
+            'و', 'با', 'که', 'برای', 'از', 'تا', 'در', 'به', 'یک', 'را', 'است', 'هست',
         }
-        
+
         # Create a copy to avoid modifying the original list
         tokens = tokens.copy()
-        
+
         # Filter out stopwords from anywhere in the list
         filtered_tokens = []
         for token in tokens:
             normalized_token = self.norm(token)
-            
+
             # Check if the normalized token is a stopword
             if normalized_token not in STOPWORDS and token not in STOPWORDS:
                 filtered_tokens.append(token)
-                    
+
         return filtered_tokens
 
     async def process_query(self, query: str) -> Response:
@@ -367,6 +458,8 @@ embedding_service = EmbeddingService({
     'OPENAI_API_KEY': os.getenv("OPENAI_API_KEY"),
     'OPENAI_URL': os.getenv("OPENAI_URL")
 })
+
+
 async def main():
     prompt_template = PromptTemplate(
         input_variables=["query"],
@@ -376,7 +469,7 @@ async def main():
     agent = SpecificProductAgent(prompt_template)
 
     test_queries = [
-        "درخواست محصول فلاور بگ شامل رز سفید، آفتابگردان، عروس و ورونیکا.",
+        "من به پایه دیواری مدلی برایت F3010 که مناسب تلویزیون‌های سایز ۱۷ تا ۵۵ اینچ باشد، نیاز دارم.",
         # "پرده با طرح چتر و برج ایفل و کد W4838 را می‌خواستم.",
         # "من دنبال فرشینه مخمل با ترمزگیر و عرض ۱ متر، طرح آشپزخانه با کد ۰۴ هستم.",
         # "شمع تزیینی شمعدونی پیچی سبز با ارتفاع ۲۵ سانتی‌متر که ۱ عددی است را می‌خواهم.",
@@ -387,7 +480,8 @@ async def main():
         response = await agent.process_query(query)
         print(f"Query: {query}\nResponse: {response}\n")
         end = time.time()
-        print(f"Processing time: {end - start:.2f} seconds\n{'-'*40}")
+        print(f"Processing time: {end - start:.2f} seconds\n{'-' * 40}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

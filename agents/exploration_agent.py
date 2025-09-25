@@ -28,7 +28,7 @@ class ExplorationAgent(FeatureProductAgent):
         try:
             # Check if chat_id exists in exploration table
             result = self.db.query(
-                "SELECT chat_id, counts, base_random_key, shop_id, city_id, brand_id, category_id, lower_price, upper_price, has_warranty, score FROM exploration WHERE chat_id = ?",
+                "SELECT chat_id, counts, base_random_key,  city_id, brand_id, category_id, lower_price, upper_price, has_warranty, score FROM exploration WHERE chat_id = ?",
                 (chat_id,)
             )
             
@@ -40,7 +40,6 @@ class ExplorationAgent(FeatureProductAgent):
                     row['counts'],
                     row['base_random_key'],
                     row['city_id'],
-                    row['shop_id'],
                     row['brand_id'],
                     row['category_id'],
                     row['lower_price'],
@@ -54,7 +53,7 @@ class ExplorationAgent(FeatureProductAgent):
                     "INSERT INTO exploration (chat_id, counts) VALUES (?, ?)",
                     (chat_id, 1)
                 )
-                return (chat_id, 1, None, None, None, None, None, None, None, 0, 0)
+                return (chat_id, 1, None, None, None, None, None, None, 0, 0)
                 
         except Exception as e:
             print(f"Error in _get_chat_history: {e}")
@@ -437,11 +436,12 @@ class ExplorationAgent(FeatureProductAgent):
 
 
     async def process_query(self, query: str, chat_id) -> Response:
-        chat_id, count, base_product_id, city_id, shop_id, brand_id,  cetegory_id, lowest_price, highest_price, has_warranty, score = self._get_chat_history(chat_id)
+        chat_id, count, base_product_id, city_id, brand_id,  cetegory_id, lowest_price, highest_price, has_warranty, score = self._get_chat_history(chat_id)
         if count <= 5:
             product_name, city_name, brand_name, category_name, features, lowest_price, highest_price, has_warranty, score = await self._extract_info_from_query(query)
             if product_name:
-                base_product_id = await self._get_base_product_id(product_name)
+                if len(product_name.strip(" ")) >= 5  and count >= 2:
+                    base_product_id = await self._get_base_product_id(product_name)
             if city_name:
                 city_id = await self._get_city_id(city_name)
             if brand_name:
@@ -459,11 +459,12 @@ class ExplorationAgent(FeatureProductAgent):
             if score is not None:
                 score = score
             extra_features = {}
-            result = self._get_member_random_keys(base_product_id, city_id, brand_id, cetegory_id, extra_features, lowest_price,
+            if count >= 3:
+                result = self._get_member_random_keys(base_product_id, city_id, brand_id, cetegory_id, extra_features, lowest_price,
                                          highest_price, has_warranty, score, count)
-            if result:
+                if result:
                 # if found member return it
-                return Response(message="", base_random_keys=[], member_random_keys=[result])
+                    return Response(message="null", base_random_keys=[], member_random_keys=[result])
             self._update_exploration_table(chat_id, count+1, base_product_id, city_id, brand_id, cetegory_id,  lowest_price, highest_price, has_warranty, score)
             reponse_text = await self._generate_response_text(base_product_id, city_id, brand_id, cetegory_id,  lowest_price, highest_price, has_warranty, score)
             return Response(message=reponse_text, base_random_keys=[], member_random_keys=[])
@@ -483,7 +484,7 @@ if __name__ == '__main__':
         template_format="jinja2"
     )
     exploration_agent = ExplorationAgent(feature_prompt_template)
-    chat_id = 'lo'
-    query = "من به بک گراند آماده بلایند دیت برای یوتیوب و آپارات باشه. آیا می‌تونید فروشنده‌ای در شهر اسلامشهر پیدا کنید؟ که امتیاز فروشگاه بالاتر از 4.9 باشد."
+    chat_id = 'fgfgdfg'
+    query = "سلام! من دنبال یه ظرف مناسب برای نگهداری بنشن و مواد غذایی خشک هستم. می‌خواستم بدونم چه گزینه‌هایی موجوده و چه فروشنده‌هایی این محصولات رو ارائه میدن؟ قیمت و کیفیت برام مهمه. می‌تونید کمکم کنید؟"
     res = asyncio.run(exploration_agent.process_query(query, chat_id))
     print(res)

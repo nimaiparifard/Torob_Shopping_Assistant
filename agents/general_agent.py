@@ -80,11 +80,18 @@ class GeneralAgent:
             )
             content = chat_response.choices[0].message.content
             try:
+                data = json.loads(content)
+                if data["base_random_keys"] or data["member_random_keys"]:
+                    data["message"] = "null"
+                content = json.dumps(data)
                 return self.parser.parse(content)
             except OutputParserException:
                 data = json.loads(content)
+                message = data["message"]
+                if data["base_random_keys"] or data["member_random_keys"]:
+                    message = "null"
                 return Response(
-                    message=data.get("message", ""),
+                    message=message,
                     base_random_keys=list(data.get("base_random_keys", []) or []),
                     member_random_keys=list(data.get("member_random_keys", []) or [])
                 )

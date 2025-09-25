@@ -9,6 +9,7 @@ route_task_comparison_system_prompt = (
     "۲. 'shop_level' - مقایسه از نظر تعداد فروشگاه‌ها و در دسترس بودن "
     "۳. 'warranty_level' - مقایسه از نظر ضمانت و گارانتی در شهرهای مختلف "
     "۴. 'city_level' - مقایسه از نظر موجودی در شهرهای مختلف"
+    "5. 'general' - اگر نوع مقایسه مشخص نبود یا مبهم بود"
 
     "قوانین بسیار مهم: "
     "۱. نام محصولات را کامل و دقیق استخراج کن (شامل همه جزئیات مثل مدل، کد، رنگ، طرح، سایز). "
@@ -22,6 +23,8 @@ route_task_comparison_system_prompt = (
     "   - shop_level: فروشگاه، موجود، خرید، در دسترس "
     "   - warranty_level: گارانتی، ضمانت، خدمات پس از فروش "
     "   - city_level: شهر، شهرها، مکان‌های مختلف "
+    "اگر نوع مقایسه مبهم باشد یا نتوانی تشخیص دهی، مقدار comparison_type را 'general' قرار بده. "
+    "برای مثال از این دسته می توان به این مثال دقت کرد کدام یک از یخچال فریزر کمبی جی‌ پلاس مدل M5320 یا یخچال فریزر جی پلاس مدل GRF-P5325 برای خانواده‌های پرجمعیت مناسب‌تر است؟ "
 
     "مثال کلیدی: "
     "پرسش: 'کدامیک از محصولات دراور فایل کمدی پلاستیکی طرح کودک با شناسه ebolgl و دراور هوم کت ۴ طبقه بزرگ طرح دار از پلاستیک با شناسه nihvhq در فروشگاه‌های بیشتری موجود است؟' "
@@ -38,6 +41,14 @@ route_task_comparison_samples = [
         "product_random_key_1": "faddzl",
         "product_name_2": "یخچال فریزر هیمالیا مدل کمبی 530 هوم بار",
         "product_random_key_2": "nkepsf"
+    },
+    {
+      "input": "کدام یک از یخچال فریزر کمبی جی‌ پلاس مدل M5320 یا یخچال فریزر جی پلاس مدل GRF-P5325 برای خانواده‌های پرجمعیت مناسب‌تر است؟ ",
+        "comparison_type": "general",
+        "product_name_1": "یخچال فریزر کمبی جی‌ پلاس مدل M5320",
+        "product_random_key_1": None,
+        "product_name_2": "یخچال فریزر جی پلاس مدل GRF-P5325",
+        "product_random_key_2": None
     },
     {
         "input": "کدام یک از این تلویزیون‌ها برای تماشای محتوای با وضوح بالا مناسب‌تر است؟ تلویزیون جی پلاس مدل PH514N سایز ۵۰ اینچ یا تلویزیون جی پلاس GTV-50RU766S سایز ۵۰ اینچ",
@@ -277,6 +288,46 @@ route_task_comparison_samples = [
         "product_name_1": "لحاف کرسی دست‌دوز ترمه مدل زرشکی",
         "product_random_key_1": "iushix",
         "product_name_2": "لحاف کرسی دست‌دوز ترمه مدل آبی کد 119807",
+        "product_random_key_2": None
+    },
+    {
+        "input": "برای کسانی که نگران قبض برق آخر ماه هستند، کولر گازی گری 12000 بهتره یا ال‌جی 9000؟",
+        "comparison_type": "general",
+        "product_name_1": "کولر گازی گری 12000",
+        "product_random_key_1": None,
+        "product_name_2": "کولر گازی ال‌جی 9000",
+        "product_random_key_2": None
+    },
+    {
+        "input": "ین ماشین لباسشویی اسنوا 7 کیلویی و پاکشوما 8 کیلویی کدومش در طولانی‌مدت بیشتر رضایت می‌ده؟",
+        "comparison_type": "general",
+        "product_name_1": "ماشین لباسشویی اسنوا 7 کیلویی",
+        "product_random_key_1": None,
+        "product_name_2": "پاکشوما 8 کیلویی",
+        "product_random_key_2": None
+    },
+    {
+        "input": "برای خانواده‌ای که حوصله شست‌وشوی زیاد نداره، ماشین ظرفشویی بوش سری 6 بهتره یا سامسونگ 14 نفره؟",
+        "comparison_type": "general",
+        "product_name_1": "ماشین ظرفشویی بوش سری 6",
+        "product_random_key_1": None,
+        "product_name_2": "ماشین ظرفشویی سامسونگ 14 نفره",
+        "product_random_key_2": None
+    },
+    {
+        "input" : "گوشی شیائومی Redmi Note 11 یا سامسونگ A32 بیشتر به درد کسی می‌خوره که مدام توی اینستاگرام می‌چرخه؟",
+        "comparison_type": "general",
+        "product_name_1": "گوشی شیائومی Redmi Note 11",
+        "product_random_key_1": None,
+        "product_name_2": "گوشی سامسونگ A32",
+        "product_random_key_2": None
+    },
+    {
+        "input": "بین لپ‌تاپ ایسوس VivoBook و لنوو IdeaPad کدومش برای دانشجوها بهتره؟",
+        "comparison_type": "general",
+        "product_name_1": "لپ‌تاپ ایسوس VivoBook",
+        "product_random_key_1": None,
+        "product_name_2": "لپ‌تاپ لنوو IdeaPad",
         "product_random_key_2": None
     }
 ]

@@ -26,6 +26,7 @@ from .validators import (
     validate_chat_id, validate_random_keys, sanitize_response_message
 )
 from .logging_config import setup_logging, log_http_request, log_chat_interaction
+from .session_manager import cleanup_sessions
 from router import Router
 from response_format import Response
 
@@ -49,6 +50,8 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down Torob AI Assistant API...")
+    await cleanup_services()
+    logger.info("API shutdown complete!")
 
 
 async def initialize_services():
@@ -64,6 +67,26 @@ async def initialize_services():
     except Exception as e:
         logger.error(f"Failed to initialize services: {e}")
         raise
+
+
+async def cleanup_services():
+    """Cleanup all services and close connections"""
+    global router
+    
+    try:
+        if router:
+            router.close()
+            router = None
+            logger.info("Router cleaned up successfully!")
+        
+        # Cleanup HTTP sessions
+        await cleanup_sessions()
+        logger.info("HTTP sessions cleaned up successfully!")
+        
+        logger.info("All services cleaned up successfully!")
+        
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
 
 
 def get_router() -> Router:
@@ -186,6 +209,52 @@ async def health_check():
         message="Torob AI Assistant API is running",
         version="1.0.0"
     )
+
+
+@app.get("/system/status")
+async def system_status():
+    """System status endpoint to monitor file descriptors and connections"""
+    import psutil
+    
+    try:
+        current_process = psutil.Process()
+        
+        # Get file descriptor information
+        open_files = len(current_process.open_files())
+        connections = len(current_process.connections())
+        
+        # Get memory usage
+        memory_info = current_process.memory_info()
+        memory_mb = memory_info.rss / 1024 / 1024
+        
+        # Get CPU usage
+        cpu_percent = current_process.cpu_percent()
+        
+        return {
+            "status": "healthy",
+            "file_descriptors": {
+                "open_files": open_files,
+                "connections": connections,
+                "total_fds": open_files + connections
+            },
+            "memory": {
+                "rss_mb": round(memory_mb, 2),
+                "percent": current_process.memory_percent()
+            },
+            "cpu_percent": cpu_percent,
+            "threads": current_process.num_threads(),
+            "recommendations": {
+                "max_recommended_fds": 1000,
+                "warning_threshold": 800,
+                "critical_threshold": 950
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "message": "Could not retrieve system status"
+        }
 
 
 @app.get("/download/logs")
@@ -360,19 +429,27 @@ async def chat(
                     logger.info(f"Found image URL in text: {image_query}")
                     
             elif message.type == "image":
-                # Handle image content - could be base64 or URL with @ prefix
+                # Handle image content - could be base64 data URL or regular URL
                 image_content = message.content.strip()
                 
-
-                # Extract URL after @ symbol
-                image_url = image_content
-                print(image_url)
-                # Validate URL format
-                if image_url.startswith(('http://', 'https://')):
-                    image_query = image_url
+                # Check if it's a base64 data URL
+                if image_content.startswith('data:image/'):
+                    # Extract base64 data from data URL
+                    try:
+                        # Format: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...
+                        header, base64_data = image_content.split(',', 1)
+                        image_query = base64_data
+                        logger.info(f"Found base64 image data: {len(base64_data)} characters")
+                    except ValueError:
+                        raise HTTPException(status_code=400, detail="Invalid base64 image format")
+                elif image_content.startswith(('http://', 'https://')):
+                    # Handle URL format
+                    image_query = image_content
                     logger.info(f"Found image URL: {image_query}")
                 else:
-                    raise HTTPException(status_code=400, detail="Invalid image URL format")
+                    # Assume it's raw base64 data without data URL prefix
+                    image_query = image_content
+                    logger.info(f"Found raw base64 image data: {len(image_content)} characters")
         
         # Ensure we have at least some text content
         if not user_query.strip():
