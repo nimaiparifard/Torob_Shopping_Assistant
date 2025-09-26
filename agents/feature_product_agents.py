@@ -330,7 +330,7 @@ async def main():
     agent = FeatureProductAgent(prompt_template)
 
     test_queries = [
-        "وضوح تلویزیون ال جی مدل UT80006 سایز ۵۰ اینچ Ultra HD 4K LED به من بگو"
+        "آیا محصول باکس 60لیتری سایز همه مدل سایز - نارنجی / ۱۰اینچ به صورت نو موجود است یا دست دوم؟"
     ]
 
     for query in test_queries:

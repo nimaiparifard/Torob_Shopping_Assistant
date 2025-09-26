@@ -39,3 +39,4 @@ if __name__ == "__main__":
     print("🧹 Clearing corrupted embedding cache files...")
     clear_cache_files()
     print("\n✨ Done! You can now run your application again.")
+

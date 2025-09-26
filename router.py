@@ -45,7 +45,7 @@ class Router:
             # Prepare few-shot examples for the LLM
             examples_text = ""
             for sample in router_scenario_type_samples[:10]:  # Use first 10 examples
-                examples_text += f"Input: {sample['input']}\nOutput: {{\"scenario_type\": \"{sample['scenatio_type']}\"}}\n\n"
+                examples_text += f"Input: {sample['input']}\nOutput: {{\"scenario_type\": \"{sample['scenario_type']}\"}}\n\n"
             
             # Create the prompt
             prompt = f"{router_scenario_system_prompt}\n\nExamples:\n{examples_text}\n\nInput: {query}\nOutput:"
@@ -206,7 +206,7 @@ class Router:
 async def main():
     router = Router()
     prompts = [
-        "کدام یک از یخچال فریزر کمبی جی‌ پلاس مدل M5320 یا یخچال فریزر جی پلاس مدل GRF-P5325 برای خانواده‌های پرجمعیت مناسب‌تر است؟ ",
+        "آیا محصول باکس 60لیتری سایز همه مدل سایز - نارنجی / ۱۰اینچ به صورت نو موجود است یا دست دوم؟",
         # " متوسط قیمت پکیج دیواری لورچ مدل آدنا ظرفیت ۳۲ هزار چقدر است؟",
     #         "سلام! من به دنبال یک دستگاه بخور و رطوبت ساز هستم. می‌خواهم از آن برای بهبود کیفیت هوای خانه‌ام استفاده کنم. آیا می‌توانید به من کمک کنید تا یک فروشنده مناسب پیدا کنم؟",
 
@@ -219,12 +219,12 @@ async def main():
             #     "ویژگی مبرد کولر گازی پاکشوما مدل MPF 18CH با ظرفیت ۱۸ هزار چیست؟"
         ]
     for prompt in prompts:
-        response = await router.route("121", prompt, "")
+        response = await router.route("1ghhh21", prompt, "")
         print(response)
-    image_prompt = "شیء و مفهوم اصلی در تصویر چیست؟"
-    image_url = "https://image.torob.com/base/images/7i/p6/7ip6Yt4qrJWb_ra8.jpg"
-    response = await router.route("b", image_prompt, image_url)
-    print(response)
+    # image_prompt = "شیء و مفهوم اصلی در تصویر چیست؟"
+    # image_url = "https://image.torob.com/base/images/7i/p6/7ip6Yt4qrJWb_ra8.jpg"
+    # response = await router.route("b", image_prompt, image_url)
+    # print(response)
 
 
 if __name__ == "__main__":

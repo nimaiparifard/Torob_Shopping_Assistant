@@ -167,6 +167,7 @@ CREATE INDEX IF NOT EXISTS idx_members_price ON members(price);
 CREATE TABLE exploration (
     chat_id        TEXT PRIMARY KEY,
     base_random_key  TEXT,
+    product_name    TEXT,
     shop_id         INTEGER,
     brand_id        INTEGER,
     city_id        INTEGER,

@@ -97,6 +97,7 @@ if __name__ == "__main__":
     else:
         print("Product not found")
 
+
     # Partial match - search for products containing a term
     # search_term = "رخت اویز جاکفشی"
     # a = f"%{search_term}%"
@@ -123,9 +124,9 @@ if __name__ == "__main__":
     # for product in results:
     #     print(f"{product['persian_name']} -> {product['random_key']}")
 
-    # یخچال فریزر کمبی جی‌ پلاس مدل M5320
-    search_term = "یخچال فریزر کمبی"
-    search_term_2 = "جی‌ پلاس"
+    #من دنبال آبمیوه گیری وگاتی مدل VE255
+    search_term = "وگاتی"
+    search_term_2 = "VE255"
     a = f"%{search_term}%"
     b = f"%{search_term_2}%"
     results = db.query(
@@ -138,9 +139,9 @@ if __name__ == "__main__":
         print(f"{product['persian_name']} -> {product['random_key']} extra: {product['extra_features']}")
     print("----")
     #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
-    search_term = "جی پلاس"
-    search_term_2 = "فریزر"
-    search_term_3 = "GRF-P532"
+    search_term = "آبمیوه گیری"
+    search_term_2 = "وگاتی"
+    search_term_3 = "چندکاره"
     a = f"%{search_term}%"
     b = f"%{search_term_2}%"
     c = f"%{search_term_3}%"
@@ -148,6 +149,25 @@ if __name__ == "__main__":
         "SELECT random_key, persian_name, extra_features FROM base_products"
         " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
         (a, b , c)
+    )
+    print(len(results))
+    for product in results:
+        print(f"{product['persian_name']} -> {product['random_key']}")
+
+    print("----")
+    #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
+    search_term = "فرشینه"
+    search_term_2 = "1 متر"
+    search_term_3 = "04"
+    search_term_4 = "آشپزخانه"
+    a = f"%{search_term}%"
+    b = f"%{search_term_2}%"
+    c = f"%{search_term_3}%"
+    d = f"%{search_term_4}%"
+    results = db.query(
+        "SELECT random_key, persian_name, extra_features FROM base_products"
+        " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
+        (a, b , c, d)
     )
     print(len(results))
     for product in results:

@@ -8,6 +8,9 @@ that represent "no data found" scenarios. It can remove entries with:
 - Entries with specific patterns indicating no data found
 
 Usage:
+    # Clean ALL entries from exploration table (no constraints)
+    python -m db.clean_exploration --clean-everything
+    
     # Clean all entries with no data
     python -m db.clean_exploration --clean-all
     
@@ -21,7 +24,7 @@ Usage:
     python -m db.clean_exploration --stats
     
     # Backup before cleaning
-    python -m db.clean_exploration --backup --clean-all
+    python -m db.clean_exploration --backup --clean-everything
 
 Author: Torob AI Team
 """
@@ -324,13 +327,12 @@ class ExplorationCleaner:
             int: Number of entries removed.
         """
         try:
-            # Count entries to be removed (entries with base_random_key but missing other critical fields)
+            # Count entries to be removed - entries missing critical identification fields
+            # These are entries that have base_random_key but are missing shop, brand, or category
             count_result = self.db.query("""
                 SELECT COUNT(*) as count FROM exploration 
                 WHERE base_random_key IS NOT NULL 
                 AND (shop_id IS NULL OR brand_id IS NULL OR category_id IS NULL)
-                AND lower_price IS NULL 
-                AND upper_price IS NULL
             """)
             entries_to_remove = count_result[0]['count'] if count_result else 0
             
@@ -343,8 +345,6 @@ class ExplorationCleaner:
                 DELETE FROM exploration 
                 WHERE base_random_key IS NOT NULL 
                 AND (shop_id IS NULL OR brand_id IS NULL OR category_id IS NULL)
-                AND lower_price IS NULL 
-                AND upper_price IS NULL
             """)
             
             print(f"✅ Removed {entries_to_remove} partial-NULL entries.")
@@ -352,6 +352,33 @@ class ExplorationCleaner:
             
         except Exception as e:
             print(f"❌ Error cleaning partial-NULL entries: {e}")
+            return 0
+
+    def clean_all_entries(self) -> int:
+        """
+        Remove ALL entries from the exploration table without any constraints.
+        This will completely empty the table.
+        
+        Returns:
+            int: Total number of entries removed.
+        """
+        try:
+            # Count total entries
+            count_result = self.db.query("SELECT COUNT(*) as count FROM exploration")
+            total_entries = count_result[0]['count'] if count_result else 0
+            
+            if total_entries == 0:
+                print("No entries found to clean.")
+                return 0
+            
+            # Remove ALL entries
+            self.db.execute("DELETE FROM exploration")
+            
+            print(f"✅ Removed ALL {total_entries} entries from exploration table.")
+            return total_entries
+            
+        except Exception as e:
+            print(f"❌ Error cleaning all entries: {e}")
             return 0
 
     def clean_all_no_data_entries(self) -> int:
@@ -515,6 +542,8 @@ def main():
     # Cleaning options
     parser.add_argument('--clean-all', action='store_true', 
                        help='Clean all no-data-found entries (comprehensive cleaning)')
+    parser.add_argument('--clean-everything', action='store_true', 
+                       help='Clean ALL entries from exploration table (no constraints)')
     parser.add_argument('--clean-null', action='store_true', 
                        help='Clean entries with all NULL values')
     parser.add_argument('--clean-counts', action='store_true', 
@@ -552,7 +581,7 @@ def main():
             return
         
         # Show stats
-        if args.stats or not any([args.clean_all, args.clean_null, args.clean_counts, 
+        if args.stats or not any([args.clean_all, args.clean_everything, args.clean_null, args.clean_counts, 
                                  args.clean_partial, args.clean_high_count, args.clean_old]):
             cleaner.print_stats()
             return
@@ -568,7 +597,9 @@ def main():
         # Perform cleaning operations
         total_removed = 0
         
-        if args.clean_all:
+        if args.clean_everything:
+            total_removed += cleaner.clean_all_entries()
+        elif args.clean_all:
             total_removed += cleaner.clean_all_no_data_entries()
         else:
             if args.clean_null:

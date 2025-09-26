@@ -24,6 +24,7 @@ router_scenario_system_prompt = (
     "   - جستجو با معیارهای مختلف (قیمت، برند، شهر، امتیاز فروشگاه) "
     "   - درخواست پیشنهاد محصولات "
     "   - پرسش‌های باز درباره محصولات "
+    " اگر متن سوال کاربر شامل این 'عبارات اینکه لطفا کمک کنید'، 'اگر موجود دارید لطفا راهنمایی کنید'، 'می‌تونید کمکم کنید؟' 'آیا می‌تونید به من کمک کنید تا یه فروشنده خوب پیدا کنم?' 'ممنون می‌شم اگه راهنمایی کنید' اگر این عبارات را دیدی  exploration را انتخاب کن. "
 
     "۳. برای تشخیص 'specific_product': "
     "   - درخواست محصولات خاص با مشخصات دقیق و کامل "
@@ -37,6 +38,7 @@ router_scenario_system_prompt = (
     "   - سوالات 'چقدر' و 'چند' درباره مشخصات محصول "
     "   - درخواست اطلاعات فنی یا اندازه‌گیری محصول "
     "   - مثال: 'وضوح تلویزیون ال جی مدل UT80006 سایز ۵۰ اینچ Ultra HD 4K LED به من بگو' "
+ 
 
     "۵. برای تشخیص 'shop': "
     "   - کلمات کلیدی: 'قیمت', 'میانگین', 'حداقل', 'حداکثر', 'فروشگاه', 'چند فروشگاه', 'موجود' "
@@ -62,6 +64,7 @@ router_scenario_system_prompt = (
     "۸. اگر پرسش با 'به من بگو'، 'چقدر'، 'چند'، 'ابعاد'، 'وزن' شروع می‌شود، 'feature_product' است "
     "۹. اگر پرسش با 'می‌خواهم'، 'نیاز دارم'، 'سفارش' شروع می‌شود، 'specific_product' است "
     " ۱۰. ممکن سوال کاربر در مورد ویژگی باشد و به طور معمول بیا نشود برای مثال در مورد نو بودن سوال می پرسد دقت کنی در این جا به عنوان ویژگی در نظر بگیری و سناریو را feature_product در نظر بگیری "
+    "11. اگر متن سوال کاربر شامل این 'عبارات اینکه لطفا کمک کنید'، 'اگر موجود دارید لطفا راهنمایی کنید'، 'می‌تونید کمکم کنید؟' 'آیا می‌تونید به من کمک کنید تا یه فروشنده خوب پیدا کنم?' 'ممنون می‌شم اگه راهنمایی کنید' اگر این عبارات را دیدی  exploration را انتخاب کن. "
 
     "مثال‌های کلیدی: "
     "پرسش: 'سلام! من دنبال یه گیاه بونسای هستم که خیلی خاص و زیبا باشه. می‌خوام برای هدیه دادن استفاده کنم.' "
@@ -83,370 +86,386 @@ router_scenario_system_prompt = (
 router_scenario_type_samples = [
     {
       "input": "سلام، می‌خواستم درباره وضعیت محصول برد یخچال فریزر دوو مدل R15 اطلاعاتی بگیرم. آیا این محصول نو است یا خیر؟",
-      "scenatio_type": "feature_product"
+      "scenario_type": "feature_product"
     },
     {
         "input": "ping",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return base random dfdf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return base random key dfdsdvsvxcvxcvf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return random key dfdASaew23rewfsdf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "output base random 334345434rfdf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "output base random key df24325345345df",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "print base random key 23233534ytgdf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return base random 2435tdvxvxvd",
-        "scenatio_type": "general"  
+        "scenario_type": "general"  
     },  
     {
         "input": "return base random 3rgff546tth",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return member random dfgfhttfdgvxcvsdgdf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return member random fdgdfgdfgdfgf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return member random gdfgdfgdfsgfdsg",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return member random dfgdfvswereew",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return member random dfgfhttdf6566--sdgdf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return member random efs45454gdf",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
         "input": "return member random d54t6et344fg",
-        "scenatio_type": "general"
+        "scenario_type": "general"
     },
     {
       "input": "متوسط قیمت پکیج دیواری لورچ مدل آدنا ظرفیت ۳۲ هزار چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "درخواست محصول فلاور بگ شامل رز سفید، آفتابگردان، عروس و ورونیکا.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "پرده با طرح چتر و برج ایفل و کد W4838 را می‌خواستم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "من دنبال فرشینه مخمل با ترمزگیر و عرض ۱ متر، طرح آشپزخانه با کد ۰۴ هستم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "شمع تزیینی شمعدونی پیچی سبز با ارتفاع ۲۵ سانتی‌متر که ۱ عددی است را می‌خواهم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "پرده‌ای با طرح درختان پاییزی و کد F927 می‌خواستم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "به دنبال یک فرشینه نمدی با پشت ترمزدار، عرض ۱/۵ متر و طرح اتاق کودک با کد ۱۲ هستم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "یک شمع استوانه‌ای قرمز رنگ با ارتفاع ۳۰ سانتی‌متر که تکی عرضه می‌شود، می‌خواهم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "برای هدیه نیاز به فلاورباکس پر از گل‌های ارکیده بنفش و رز قرمز دارم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "می‌خواستم پرده‌ای با طرح گل‌های آبی و زمینه روشن، کد M204، سفارش بدهم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "یک شمع دکوری استوانه‌ای رنگ طلایی با ارتفاع ۲۰ سانتی‌متر می‌خواهم تهیه کنم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "سفارش من شامل باکس گل رز صورتی، میخک سفید و برگ‌های تزئینی یوکالیپتوس است.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "پرده‌ای با چاپ منظره کوهستانی و کد D771 می‌خواستم خریداری کنم.",
-        "scenatio_type": "specific_product"
+        "scenario_type": "specific_product"
     },
     {
         "input": "وضوح تلویزیون ال جی مدل UT80006 سایز ۵۰ اینچ Ultra HD 4K LED به من بگو",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "آیا می\u200cتوانید بگویید جنس میز جلومبلی مدل تسلا از چه موادی ساخته شده است؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "آیا میز بار DBP99 از چه جنسی ساخته شده است؟'",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "تراکم قالی فرش 1200 شانه برجسته نقشه برکه زمینه یاسی - 12 متری چقدر است؟'",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "می\u200cخواستم بپرسم اندازه و متراژ فرش طلایی جدید الماس سیلور 1200 شانه چقدر است؟'",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "لطفاً درباره ظرفیت ماگ سرامیکی دسته رنگی طرح نشانگر سوخت  Coffee Fuel Gauge  اطلاعات بیشتری بدهید و بفرمایید که این ماگ چه ظرفیتی دارد؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "می‌خواستم بدونم جنس پایه‌های میز جلو مبلی مدل G45 از چه متریالی ساخته شده؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "ابعاد و وزن دقیق تابلو دیواری سه‌تکه با طرح دریا و کد T309 چقدره؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "تراکم بافت فرش دستباف ماشینی ۱۵۰۰ شانه طرح افشان فیروزه‌ای ۹ متری چند است؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "این ست ماگ و نعلبکی سرامیکی طرح برگ، چند میلی‌لیتر گنجایش داره؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "پرسش من اینه که مبل راحتی مدل ونیز چند نفره است و عرض هر نشیمن چقدره؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "وزن تقریبی ساعت دیواری فلزی مدرن کد W881 چقدر هست؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "می‌خواستم اطلاعاتی درباره ارتفاع گلدان سرامیکی مدل آنتیک XL بدونم.",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "جنس روکش کوسن مخملی طرح هندسی کد C207 از چه نوع پارچه‌ایه؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "لطفاً بگید قهوه‌ساز برقی مدل Barista 500 چند فنجان ظرفیت داره؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "اندازه و متریال قاب آینه دکوراتیو طرح خورشید طلایی کد M110 چی هست؟",
-        "scenatio_type": "feature_product"
+        "scenario_type": "feature_product"
     },
     {
         "input": "قیمت متوسط چای ساز بوش مدل PB-78TS ظرفیت ۲.۵ لیتر با کتری پیرکس در شهر قم چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "نرخ میانگین قهوه‌ساز دلونگی مدل X120 با مخزن شیشه‌ای در فروشگاه‌های قم همراه با گارانتی چه مقدار است",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "متوسط قیمت چای‌ساز فیلیپس مدل HD-7301 در بازار تهران چقدر برآورد می‌شود",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "میانگین هزینه خرید کتری برقی تفال مدل TK-900 در سطح شهر قم چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "قیمت متوسط دستگاه اسپرسوساز نوا مدل 1400 در فروشگاه‌های تهران حدوداً چه میزان است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "میانگین نرخ خرید سماور برقی پارس‌خزر ظرفیت 3 لیتر در بازار قم همراه با ضمانت چه رقمی گزارش می‌شود؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "متوسط قیمت پکیج دیواری لورچ مدل آدنا ظرفیت ۳۲ هزار چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "کمترین قیمت برای دستگاه بخور سرد شیائومی مدل F628S ظرفیت ۵ لیتر همراه با ضمانت چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "حداقل نرخ فروش سماور برقی پارس‌خزر ظرفیت ۴ لیتر در فروشگاه‌های آنلاین چند است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "بیشترین قیمت برای دستگاه بخور سرد شیائومی مدل F628S ظرفیت ۵ لیتر چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "بالاترین قیمت برای دستگاه بخور سرد شیائومی مدل F628S ظرفیت ۵ لیتر چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "پایین‌ترین نرخ خرید دستگاه تصفیه‌هوا فیلیپس مدل AC1215 در بازار چند است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "حداقل هزینه برای خرید کتری برقی بوش مدل TWK-8613 در فروشگاه‌های تهران چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "کمترین قیمت جاروبرقی سامسونگ مدل VC20 در سطح شهر قم چه میزان گزارش شده است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "پایین‌ترین مبلغ مورد نیاز برای خرید اسپرسوساز نوا مدل 149 همراه با ضمانت در بازار ایران چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "حداقل نرخ فروش سماور برقی پارس‌خزر ظرفیت ۴ لیتر در فروشگاه‌های آنلاین چند است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "بیشترین قیمت برای دستگاه بخور سرد شیائومی مدل F628S ظرفیت ۵ لیتر چقدر است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "این کالا در چند فروشگاه عرضه می‌شود: غذاساز فیلیپس مدل HR7320",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "چه تعداد فروشگاه همراه با ضمانت، محصول جاروبرقی بوش مدل BGL8 را ارائه می‌کنند؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "تلویزیون ال‌جی 55UP در چند مرکز فروش موجود است؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "چند فروشگاه این دستگاه را می‌فروشند: کتری برقی تفال مدل TK-900؟",
-        "scenatio_type": "shop"
+        "scenario_type": "shop"
     },
     {
         "input": "کدامیک از محصولات 'دراور فایل کمدی پلاستیکی طرح کودک' با شناسه \"ebolgl\" و 'دراور هوم کت ۴ طبقه بزرگ طرح دار از پلاستیک' با شناسه \"nihvhq\" در فروشگاه‌های بیشتری موجود است و آسان‌تر می‌توان آن را خرید؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "از بین یخچال فریزر هیمالیا مدل FIVE MODE ظرفیت ۲۲ فوت هومباردار با شناسه \"faddzl\" و یخچال فریزر هیمالیا مدل کمبی 530 هوم بار با شناسه \"nkepsf\"، کدام رنگ‌های موجود بیشتری جهت انطباق با سبک‌های مختلف آشپزخانه دارد؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "کدام محصول بین 'گلدون کنار سالنی سه سایزی طرح راش' - شناسه \"dzpdls\" - و 'گلدان شیشه‌ای لب طلایی مدل گلوریا سایز ۷۰ سانتی' در تعداد بیشتری از شهرها موجود است؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "برای مقایسه، کدام یک از محصولات \"جا ادویه شیشه ای با درب چوبی و استند نردبانی\" با شناسه \"gouchy\" و \"جا ادویه مک کارتی استند چوبی\" با شناسه \"uhqmhb\" از نظر تعداد تکه‌ها بیشتر است؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "سلام، می‌خواستم بدانم بین یخچال فریزر ۴ کشویی ظرفیت ۲۹۴۶ با شناسه kdihkn و یخچال ایستکول ظرفیت ۵ فوت با شناسه bmonga کدام یک مصرف انرژی بهتری دارند؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "محصول 'لحاف کرسی دست دوز ترمه طرح نسترن رنگ زرشکی' با شناسه \"iushix\" و 'لحاف کرسی دست دوز ترمه آبی طرح نسترن کد 119807 Lahaf' از نظر در دسترس بودن گارانتی در شهرهای مختلف را مقایسه کنید. کدام یک گزینه بهتری است؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "سلام، می‌خواستم بدانم بین \"یخچال فریزر ۴ کشویی ظرفیت ۲۹۴۶\" - شناسه \"kdihkn\" و \"یخچال ایستکول ظرفیت ۵ فوت\" با شناسه \"bmonga\" کدام یک مصرف انرژی بهتری دارند؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "این دو تلویزیون ال جی NANO75 سایز ۵۰ اینچ Ultra HD 4K LED و تلویزیون ال جی مدل UT80006 سایز ۵۰ اینچ Ultra HD 4K LED با شناسه \"dmsmlc\" از لحاظ اصالت محصول چگونه با یکدیگر مقایسه می‌شوند؟ کدام یک اصالت بیشتری دارد؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "کدام یک از این تلویزیون‌ها برای تماشای محتوای با وضوح بالا مناسب‌تر است؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "میانگین قیمت لپ‌تاپ Dell Inspiron 15 3520 رو با مک‌بوک Air M2 مقایسه کنیم، کدوم به‌صرفه‌تره؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "سلام، می‌خواستم بدانم بین یخچال فریزر ۴ کشویی ظرفیت ۲۹۴۶ با شناسه kdihkn و یخچال ایستکول ظرفیت ۵ فوت با شناسه bmonga کدام یک مصرف انرژی بهتری دارند؟",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "بین گوشی سامسونگ گلکسی A54 و آیفون 14، از نظر حداقل قیمت مقایسه کنید.",
-        "scenatio_type": "comparison"
+        "scenario_type": "comparison"
     },
     {
         "input": "سلام! من دنبال یه گیاه بونسای هستم که خیلی خاص و زیبا باشه. می‌خوام برای هدیه دادن استفاده کنم و بهتره که ارسال گل رایگان هم داشته باشه. قیمتش هم حدوداً بین ۳,۷۰۰,۰۰۰ تا ۴,۱۰۰,۰۰۰ تومان باشه. می‌تونید کمکم کنید؟",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "سلام! ممنون از راهنمایی‌تون. من به دنبال بونسای جینسینگ هستم و اندازه‌اش هم برام مهمه، مثلاً سایز ۵ باشه. همچنین، فروشگاهی که امتیاز بالایی داشته باشه برام مهمه. آیا می‌تونید فروشنده‌ای با این مشخصات پیدا کنید؟",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال بونسای جینسینگ هستم که سایز ۵ باشه و از فروشگاهی با امتیاز بالا خرید کنم. آیا می‌تونید فروشنده‌ای با این مشخصات پیدا کنید؟",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "سلام! من دنبال یه لوستر سقفی هستم که برای اتاق نشیمن مناسب باشه. می‌خواستم بدونم آیا می‌تونید به من کمک کنید تا یه فروشنده خوب پیدا کنم? ممنون می‌شم اگه راهنمایی کنید.",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال لوستری هستم که نصب سقفی داشته باشه و از جنس پلاستیک باشه. همچنین، قیمتش حدود ۱,۱۵۰,۰۰۰ تومان باشه. آیا می‌تونید فروشنده‌ای با این مشخصات پیدا کنید؟ ممنون می‌شم اگه راهنمایی کنید.",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "رنگ یا طراحی خاصی مد نظرم نیست، اما مهمه که فروشنده‌ای که معرفی می‌کنید امتیاز بالایی داشته باشه. آیا می‌تونید فروشنده‌ای با امتیاز خوب در تهران پیدا کنید؟ ممنون می‌شم اگه راهنمایی کنید.",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "لطفاً به من بگویید که آیا می‌توانید فروشنده‌ای با امتیاز بالا برای آبمیوه‌گیری وگاتی مدل VE255 در اهواز پیدا کنید؟ اگر اطلاعات بیشتری نیاز دارید، خوشحال می‌شوم که کمک کنم.",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال یک آبمیوه‌گیری برقی هستم که چندکاره باشه و قابلیت‌هایی مثل مخلوط‌کن و آسیاب داشته باشه. برند خاصی مد نظرم نیست، اما قیمتش حدود ۵ میلیون تا ۵.۵ میلیون تومان باشه. می‌تونید پیشنهادی بدید؟",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال یک آبمیوه‌گیری برقی هستم که چندکاره باشه و قابلیت‌هایی مثل مخلوط‌کن و آسیاب داشته باشه. برند خاصی مد نظرم نیست، اما قیمتش حدود ۵ میلیون تا ۵.۵ میلیون تومان باشه. می‌تونید پیشنهادی بدید؟",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال آبمیوه‌گیری هستم که دقیقاً ۴ کاره باشه و در شهر اهواز موجود باشه. آیا می‌تونید به من کمک کنید تا فروشنده مناسبی پیدا کنم؟",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال کاسه استیل طلایی خیلی بزرگ با قطر حدود 27.5 سانتی‌متر هستم. برند خاصی مد نظرم نیست، اما فروشگاه باید امتیاز بالایی داشته باشد. آیا می‌توانید فروشگاهی با این مشخصات پیدا کنید؟",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال کاسه استیل طلایی خیلی بزرگ با قطر 27.5 سانتی‌متر هستم که در شهر قم موجود باشد و فروشگاهش امتیاز 5.0 داشته باشد. اگر چنین فروشگاهی وجود دارد، لطفاً کلید تصادفی عضو فروشنده محصول را به من بدهید.",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
     {
         "input": "من به دنبال کاسه استیل طلایی خیلی بزرگ با قطر 27.5 سانتی‌متر هستم که در شهر قم موجود باشد و فروشگاهش امتیاز 5.0 داشته باشد. اگر چنین فروشگاهی وجود دارد، لطفاً کلید تصادفی عضو فروشنده محصول را به من بدهید.",
-        "scenatio_type": "exploration"
+        "scenario_type": "exploration"
     },
+    {
+        "input": "سلام! من دنبال یه لوستر سقفی هستم که برای اتاق نشیمن مناسب باشه. می‌خواستم بدونم آیا می‌تونید به من کمک کنید تا یه فروشنده خوب پیدا کنم? ممنون می‌شم اگه راهنمایی کنید.",
+        "scenario_type": "exploration"
+    },
+    {
+        "input": "سلام! من دنبال یه اجاق گاز خوب می‌گردم که برای آشپزخونه‌ام مناسب باشه. می‌خوام یه اجاق گاز با کیفیت و با قیمت مناسب پیدا کنم. می‌تونید به من کمک کنید؟",
+        "scenario_type": "exploration"
+    },
+    {
+        "input": "سلام! من دنبال یه ظرف مناسب برای نگهداری بنشن و مواد غذایی خشک هستم. می‌خواستم بدونم چه گزینه‌هایی موجوده و چه فروشنده‌هایی این محصولات رو ارائه میدن؟ قیمت و کیفیت برام مهمه. می‌تونید کمکم کنید؟",
+        "scenario_type": "exploration"
+    },
+    {
+        "input": "سلام، من به دنبال خرید ساعت دیواری مدرن فلزی سایز 60 مدل 122 هستم. (پس کرایه)  اگر موجود دارید لطفا راهنمایی کنید. ممنون.",
+        "scenario_type": "exploration"
+    }
 ]

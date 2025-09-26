@@ -211,6 +211,8 @@ class ComparisonAgent(FeatureProductAgent):
             
             response_text = response_text.strip()
             response_json = json.loads(response_text)
+            if response_json["winner_random_key"] == "مساوی":
+                response_json["winner_random_key"] = None
             if response_json:
                 return response_json["final_explanation"], response_json["winner_random_key"]
             else:

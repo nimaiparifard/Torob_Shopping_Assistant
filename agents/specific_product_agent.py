@@ -197,8 +197,51 @@ class SpecificProductAgent:
                         "random_key": rk,
                         "persian_name": r["persian_name"],
                     })
-                if part_candidates and len(part_candidates) > len(temp_part_candidates):
+                if len(part_candidates) == 0 and temp_part_candidates:
                     part_candidates = temp_part_candidates
+                if part_candidates and len(part_candidates) > len(temp_part_candidates) and temp_part_candidates:
+                    part_candidates = temp_part_candidates
+
+            if len(part_candidates) >= 40:
+                print(" i am here")
+                for idx, (part, part2, part3, part4) in enumerate(itertools.combinations(unique_parts, 4)):
+                    if idx >= max_combos:
+                        break
+                    like_pattern = f"%{part}%"
+                    like_pattern_2 = f"%{part2}%"
+                    like_pattern_3 = f"%{part3}%"
+                    like_pattern_4 = f"%{part4}%"
+                    try:
+                        rows = self.db.query(
+                            "SELECT random_key, persian_name FROM base_products "
+                            "WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
+                            (like_pattern, like_pattern_2, like_pattern_3, like_pattern_4)
+                        )
+                    except Exception:
+                        rows = []
+
+                    if len(rows) == 1:
+                        chosen = rows[0]
+                        return {
+                            "random_key": chosen["random_key"],
+                            "persian_name": chosen["persian_name"],
+                            "similarity": 1,
+                            "match_type": "fuzzy"
+                        }
+                    temp_part_candidates = []
+                    for r in rows:
+                        rk = r["random_key"]
+                        if rk in seen_keys:
+                            continue
+                        seen_keys.add(rk)
+                        temp_part_candidates.append({
+                            "random_key": rk,
+                            "persian_name": r["persian_name"],
+                        })
+                    if len(part_candidates) == 0 and temp_part_candidates:
+                        part_candidates = temp_part_candidates
+                    if part_candidates and len(part_candidates) > len(temp_part_candidates) and temp_part_candidates:
+                        part_candidates = temp_part_candidates
 
             if len(part_candidates) == 1:
                 chosen = part_candidates[0]
@@ -210,19 +253,16 @@ class SpecificProductAgent:
                 }
 
             if part_candidates:
-                embedder = EmbeddingServiceWrapper()
-                # q_emb = await self.embedding_similarity.get_embedding(product_name)
+                q_emb = await self.embedding_similarity.get_embedding(product_name)
                 cand_names = [c["persian_name"] for c in part_candidates]
-                p = [product_name, ]
-                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32, ef_construction=300,
-                                                ef_search=128)
-                hits = await semantic_search(c, p, embedder, top_k=1)
-                if hits[0][0]['score'] > 0.7:
-                    chosen = part_candidates[hits[0][0]['id']]
+                cand_embs = await self.embedding_similarity.get_embeddings_batch(cand_names)
+                best = self.embedding_similarity.find_most_similar(q_emb, cand_embs)
+                if best["index"] >= 0:
+                    chosen = part_candidates[best["index"]]
                     return {
                         "random_key": chosen["random_key"],
                         "persian_name": chosen["persian_name"],
-                        "similarity": float(hits[0][0]['score']),
+                        "similarity": float(best["similarity"]),
                         "match_type": "fuzzy"
                     }
 
@@ -275,26 +315,25 @@ class SpecificProductAgent:
                             "random_key": rk,
                             "persian_name": r["persian_name"],
                         })
-                    if part_candidates and len(part_candidates) > len(temp_part_candidates):
+                    if len(part_candidates) == 0 and temp_part_candidates:
+                        part_candidates = temp_part_candidates
+                    if part_candidates and len(part_candidates) > len(temp_part_candidates) and temp_part_candidates:
                         part_candidates = temp_part_candidates
 
             if part_candidates:
-                embedder = EmbeddingServiceWrapper()
-                # q_emb = await self.embedding_similarity.get_embedding(product_name)
+                q_emb = await self.embedding_similarity.get_embedding(product_name)
                 cand_names = [c["persian_name"] for c in part_candidates]
-                p = [product_name, ]
-                c = await build_hnsw_from_texts(cand_names, embedder, metric='cosine', m=32,
-                                                ef_construction=300,
-                                                ef_search=128)
-                hits = await semantic_search(c, p, embedder, top_k=1)
-                if hits[0][0]['score'] > 0.7:
-                    chosen = part_candidates[hits[0][0]['id']]
+                cand_embs = await self.embedding_similarity.get_embeddings_batch(cand_names)
+                best = self.embedding_similarity.find_most_similar(q_emb, cand_embs)
+                if best["index"] >= 0:
+                    chosen = part_candidates[best["index"]]
                     return {
                         "random_key": chosen["random_key"],
                         "persian_name": chosen["persian_name"],
-                        "similarity": float(hits[0][0]['score']),
+                        "similarity": float(best["similarity"]),
                         "match_type": "fuzzy"
                     }
+
 
             if len(part_candidates) == 0:  # Avoid too many candidates
                 for idx, (part,) in enumerate(itertools.combinations(unique_parts, 1)):
@@ -469,7 +508,7 @@ async def main():
     agent = SpecificProductAgent(prompt_template)
 
     test_queries = [
-        "من به پایه دیواری مدلی برایت F3010 که مناسب تلویزیون‌های سایز ۱۷ تا ۵۵ اینچ باشد، نیاز دارم.",
+        "من دنبال فرشینه مخمل با ترمزگیر و عرض ۱ متر، طرح آشپزخانه با کد ۰۴ هستم.",
         # "پرده با طرح چتر و برج ایفل و کد W4838 را می‌خواستم.",
         # "من دنبال فرشینه مخمل با ترمزگیر و عرض ۱ متر، طرح آشپزخانه با کد ۰۴ هستم.",
         # "شمع تزیینی شمعدونی پیچی سبز با ارتفاع ۲۵ سانتی‌متر که ۱ عددی است را می‌خواهم.",
