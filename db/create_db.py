@@ -169,9 +169,9 @@ CREATE TABLE exploration (
     base_random_key  TEXT,
     product_name    TEXT,
     shop_id         INTEGER,
-    brand_id        INTEGER,
+    brand_name        TEXT,
     city_id        INTEGER,
-    category_id     INTEGER,
+    category_name     TEXT,
     lower_price     INTEGER,
     upper_price     INTEGER,
     counts          INTEGER,
@@ -180,8 +180,6 @@ CREATE TABLE exploration (
 );
 CREATE INDEX IF NOT EXISTS idx_exploration_base ON exploration(base_random_key);
 CREATE INDEX IF NOT EXISTS idx_exploration_shop ON exploration(shop_id);
-CREATE INDEX IF NOT EXISTS idx_exploration_brand ON exploration(brand_id);
-CREATE INDEX IF NOT EXISTS idx_exploration_category ON exploration(category_id);
 CREATE INDEX IF NOT EXISTS idx_exploration_city ON exploration(city_id);
 
 -- =========================

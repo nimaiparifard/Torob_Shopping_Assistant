@@ -31,7 +31,7 @@ class ExplorationAgent(FeatureProductAgent):
         try:
             # Check if chat_id exists in exploration table
             result = self.db.query(
-                "SELECT chat_id, counts, base_random_key,  product_name ,city_id, brand_id, category_id, lower_price, upper_price, has_warranty, score FROM exploration WHERE chat_id = ?",
+                "SELECT chat_id, counts, base_random_key,  product_name ,city_id, brand_name, category_name, lower_price, upper_price, has_warranty, score FROM exploration WHERE chat_id = ?",
                 (chat_id,)
             )
             
@@ -44,8 +44,8 @@ class ExplorationAgent(FeatureProductAgent):
                     row['base_random_key'],
                     row['product_name'],
                     row['city_id'],
-                    row['brand_id'],
-                    row['category_id'],
+                    row['brand_name'],
+                    row['category_name'],
                     row['lower_price'],
                     row['upper_price'],
                     row['has_warranty'],
@@ -405,7 +405,7 @@ class ExplorationAgent(FeatureProductAgent):
             
             # Update brand_id if provided
             if brand_id is not None:
-                update_fields.append("brand_id = ?")
+                update_fields.append("brand_name = ?")
                 update_values.append(brand_id)
 
             if city_id is not None:
@@ -414,7 +414,7 @@ class ExplorationAgent(FeatureProductAgent):
 
             # Update category_id if provided (note: parameter name has typo but keeping it consistent)
             if cetegory_id is not None:
-                update_fields.append("category_id = ?")
+                update_fields.append("category_name = ?")
                 update_values.append(cetegory_id)
 
             if product_name_old is not None:
@@ -461,7 +461,7 @@ class ExplorationAgent(FeatureProductAgent):
             print(f"Error updating exploration table: {e}")
 
     async def _generate_response_text(self, base_product_id, city_id, brand_id, cetegory_id,  lowest_price, highest_price, has_warranty, score, count):
-        prompt = "حتما می خواهیم با هم دیگر پرسخ و پاسخ داشته باشیم تا بتوانیم محصول مورد نظر شما پیدا کنیم. اگر اطلاعات را کامل تر دهید می توانیم به نیاز شما پاسخ دهم."
+        prompt = "حتما می خواهیم با هم دیگر پرسخ و پاسخ داشته باشیم تا بتوانیم محصول مورد نظر شما پیدا کنیم."
         name_prompt= ["برای پاسخگویی متن نام دقیق محصول را وارد کنید.","لطفا نام دقیق محصول همراه با نام مدل و جزئیات درون نام را وارد کنید"]
         city_prompt= ["نام شهری که می خواهید از ان محصول را تهیه کنید را وارد کنید.","لطفا نام شهر را وارد کنید"]
         brand_prompt= ["نام برند اگر مد نظر هست حتما وارد کنید.","لطفا نام برند را وارد کنید"]
@@ -472,132 +472,175 @@ class ExplorationAgent(FeatureProductAgent):
         ## for each prompt select random one from list and join them to main prompt
         _prompt = "ممنون بایت اطلاعات مفید که در اختیار بنده قرار دادید."
         if count == 1:
-            _prompt = "می توانید محصول را توصیف کنید اگر می توانید نام کامل محصول و ویژگی هایی که این  محصول دارد و همین طور این محصول مدلی دارد یا کد مخصوصی دارد اگر در اختیار قرار دهید می تواند بسیار مفید باشد." + category_prompt[0]
+            _prompt = "اگر می توانید نام کامل محصول و ویژگی هایی که این  محصول دارد و همین طور اگر این محصول مدلی دارد یا کد مخصوصی دارد در اختیار من بگذارید." + category_prompt[0]
         if count == 2:
-            _prompt = "نام شهری که می خواهید از ان محصول را تهیه کنید را وارد کنید. اگر بازه قیمتی مد نظر شما حد پایین و حد بالا ان را وارد کنید."
+            _prompt = "نام شهری که می خواهید از ان محصول را تهیه کنید را وارد کنید."
         if count == 3:
-            _prompt = "ایا نام برندی خاصی مد نظر شما هست. لطفا اگر دوست دارید محصول مورد نظر ضمانت داشته باشد اشاره کنید."
+            _prompt = "ایا نام برندی خاصی مد نظر شما هست. لطفا اگر دوست دارید محصول مورد نظر ضمانت داشته باشد اشاره کنید. امتیاز فروشنده چقدر باشد؟"
         if count == 4:
-            _prompt = "ایا می توانید نام محصول را به طور کامل همراه با جزییات ویژگی،برند یا کد درون محصول بیان کنید. اگر اطلاعات دیگری در نظر دارید حتما وارد کنید تا من محصول شما مد نظر شما را به طور دقیق پیئا کنم."
+            _prompt = ".اگر داخل نام محصول مورد نظر کد یا مدل محصول وجود دارد لطفا بیان کنید. اگر بازه قیمتی مد نظر شما حد پایین و حد بالا ان را وارد کنید. امتیاز فروشنده چقدر باشد؟"
         if count == 5:
             _prompt = "می خواهم درون پایگاه داده جست و جو انجام دهم ایا اطلاعاتی باقی مانده که مد نظرتان باشد هست که گفته نشده ممنون می شم اگر اطلاعاتی باقی مانده اعلام کنید."
-        # if not base_product_id:
-        #     prompt = prompt + "." + random.choice(name_prompt)
-        # if not city_id:
-        #     prompt = prompt + "." + random.choice(city_prompt)
-        # if not brand_id:
-        #     prompt = prompt + "." + random.choice(brand_prompt)
-        # if not cetegory_id:
-        #     prompt = prompt + "." + random.choice(category_prompt)
-        # # if not extra_features:
-        # #     prompt = prompt + "." + random.choice(feature_prompt)
-        # if not lowest_price and not highest_price:
-        #     prompt = prompt + "." + random.choice(price_prompt)
-        # if not has_warranty:
-        #     prompt = prompt + "." + random.choice(warranty_prompt)
         prompt = prompt + _prompt
         print(prompt)
         return prompt
 
-    def _get_member_random_keys(self, base_product_id, city_id, brand_id, cetegory_id, extra_features, lowest_price, highest_price, has_warranty, score, count):
+    def _get_member_random_keys(self, product_name, city_id, brand_name, cetegory_name, extra_features, lowest_price, highest_price, has_warranty, score, count):
         """ get member key query to member table based on that each of them is avaible or not write suatble queries to handle multiple scenarios. 
             do not bring extra_features in the query at this time now may be iadded in the future
         """
-        try:
-            # Build the query dynamically based on available parameters
-            query_parts = []
-            query_values = []
-            
-            # Base query with JOINs to access related tables
-            base_query = """
-                SELECT DISTINCT m.random_key 
-                FROM members m
-                JOIN base_products bp ON m.base_random_key = bp.random_key
-                JOIN shops s ON m.shop_id = s.id
-                WHERE 1=1
-            """
-            
-            # Add base_product_id filter if available
-            if base_product_id is not None:
-                query_parts.append("m.base_random_key = ?")
-                query_values.append(base_product_id)
-            
-            # Add city_id filter through shops table
-            if city_id is not None:
-                query_parts.append("s.city_id = ?")
-                query_values.append(city_id)
-            
-            # Add brand_id filter through base_products table
-            if brand_id is not None:
-                query_parts.append("bp.brand_id = ?")
-                query_values.append(brand_id)
-            
-            # Add category_id filter through base_products table
-            if cetegory_id is not None:
-                query_parts.append("bp.category_id = ?")
-                query_values.append(cetegory_id)
-            
-            # Add price range filters
-            if lowest_price is not None:
-                query_parts.append("m.price >= ?")
-                query_values.append(lowest_price)
-            
-            if highest_price is not None:
-                query_parts.append("m.price <= ?")
-                query_values.append(highest_price)
-            
-            # Add warranty filter through shops table
-            if has_warranty is not None:
-                query_parts.append("s.has_warranty = ?")
-                query_values.append(has_warranty)
-            
-            # Add score filter through shops table
-            if score is not None:
-                query_parts.append("s.score >= ?")
-                query_values.append(score)
-            
-            # Build the complete query
-            if query_parts:
-                complete_query = base_query + " AND " + " AND ".join(query_parts)
-            else:
-                complete_query = base_query
-            
-            # Add ORDER BY for consistent results (by price ascending, then by random_key)
-            complete_query += " ORDER BY m.price ASC, m.random_key ASC"
-            
-            # Execute the query
-            result = self.db.query(complete_query, query_values)
-            if count >= 5:
-                if result:
-                    return result[0]['random_key']
-                else:
-                    return None
-            else:
-                if len(result) == 1:
-                    return result[0]['random_key']
-                else:
-                    return None
-                
-        except Exception as e:
-            print(f"Error in _get_member_random_keys: {e}")
-            return None
+
+        important_parts = product_name.split(" ")
+        if brand_name:
+            important_parts.append(brand_name)
+        if cetegory_name:
+            important_parts.append(cetegory_name)
+
+        part_candidates = []
+        total_parts = len([p for p in important_parts if len(p) > 1])
+        if total_parts:
+
+            # Use unique parts (order preserved) and keep only length > 1
+            unique_parts = [p for p in dict.fromkeys(important_parts) if len(p) > 1]
+            seen_keys = set()
+            max_combos = 200  # safety cap to avoid explosion
+            for idx, (part, part2, part3) in enumerate(itertools.combinations(unique_parts, 3)):
+                if idx >= max_combos:
+                    break
+                like_pattern = f"%{part}%"
+                like_pattern_2 = f"%{part2}%"
+                like_pattern_3 = f"%{part3}%"
+                try:
+                    rows = self.db.query(
+                        "SELECT random_key, persian_name FROM base_products "
+                        "WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
+                        (like_pattern, like_pattern_2, like_pattern_3)
+                    )
+                except Exception:
+                    rows = []
+                for r in rows:
+                    rk = r["random_key"]
+                    if rk in seen_keys:
+                        continue
+                    seen_keys.add(rk)
+                    part_candidates.append({
+                        "random_key": rk,
+                        "persian_name": r["persian_name"],
+                    })
+
+                if not part_candidates:
+                    for idx, (part, part2) in enumerate(itertools.combinations(unique_parts, 2)):
+                        if idx >= max_combos:
+                            break
+                        like_pattern = f"%{part}%"
+                        like_pattern_2 = f"%{part2}%"
+                        try:
+                            rows = self.db.query(
+                                "SELECT random_key, persian_name FROM base_products "
+                                "WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
+                                (like_pattern, like_pattern_2)
+                            )
+                        except Exception:
+                            rows = []
+                        if len(rows) == 1:
+                            chosen = rows[0]
+                            return {
+                                "random_key": chosen["random_key"],
+                                "persian_name": chosen["persian_name"],
+                                "similarity": 1,
+                                "match_type": "fuzzy"
+                            }
+                        for r in rows:
+                            rk = r["random_key"]
+                            if rk in seen_keys:
+                                continue
+                            seen_keys.add(rk)
+                            part_candidates.append({
+                                "random_key": rk,
+                                "persian_name": r["persian_name"],
+                            })
+
+
+            if part_candidates:
+                for candidate in part_candidates:
+                    # Build the query dynamically based on available parameters
+                    query_parts = []
+                    query_values = []
+
+                    # Base query with JOINs to access related tables
+                    base_query = """
+                        SELECT DISTINCT m.random_key 
+                        FROM members m
+                        JOIN base_products bp ON m.base_random_key = bp.random_key
+                        JOIN shops s ON m.shop_id = s.id
+                        WHERE 1=1
+                    """
+
+                    # Add base_product_id filter if available
+                    query_parts.append("m.base_random_key = ?")
+                    query_values.append(candidate["random_key"])
+
+                    # Add city_id filter through shops table
+                    if city_id is not None:
+                        query_parts.append("s.city_id = ?")
+                        query_values.append(city_id)
+
+
+                    # Add price range filters
+                    if lowest_price is not None:
+                        query_parts.append("m.price >= ?")
+                        query_values.append(lowest_price)
+
+                    if highest_price is not None:
+                        query_parts.append("m.price <= ?")
+                        query_values.append(highest_price)
+
+                    # Add warranty filter through shops table
+                    if has_warranty is not None:
+                        query_parts.append("s.has_warranty = ?")
+                        query_values.append(has_warranty)
+
+                    # Add score filter through shops table
+                    if score is not None:
+                        query_parts.append("s.score >= ?")
+                        query_values.append(score)
+
+                    # Build the complete query
+                    if query_parts:
+                        complete_query = base_query + " AND " + " AND ".join(query_parts)
+                    else:
+                        complete_query = base_query
+
+                    # Add ORDER BY for consistent results (by price ascending, then by random_key)
+                    complete_query += " ORDER BY m.price ASC, m.random_key ASC"
+
+                    # Execute the query
+                    result = self.db.query(complete_query, query_values)
+                    if result:
+                        if len(result) == 1:
+                            print(candidate["persian_name"])
+                            return result[0]["random_key"]
+
+
+
 
 
     async def process_query(self, query: str, chat_id) -> Response:
-        chat_id, count, base_product_id, product_name_old, city_id, brand_id,  cetegory_id, lowest_price_old, highest_price_old, has_warranty_old, score_old = self._get_chat_history(chat_id)
+        chat_id, count, base_product_id, product_name_old, city_id, brand_name_old,  category_name_old, lowest_price_old, highest_price_old, has_warranty_old, score_old = self._get_chat_history(chat_id)
         if count <= 5:
             product_name, city_name, brand_name, category_name, features, lowest_price, highest_price, has_warranty, score = await self._extract_info_from_query(query)
             if product_name:
                 product_name_old = product_name
-                base_product_id_new = await self._get_base_product_id(product_name, count)
-                if base_product_id_new:
-                    base_product_id = base_product_id_new
+                # product_name_old = product_name
+                # base_product_id_new = await self._get_base_product_id(product_name, count)
+                # if base_product_id_new:
+                #     base_product_id = base_product_id_new
             if city_name and not city_id:
                 city_id = await self._get_city_id(city_name)
-            if brand_name and not brand_id:
-                brand_id =  await self._get_brand_id(brand_name)
-            if category_name and not cetegory_id:
-                cetegory_id = await self._get_category_id(category_name)
+            if brand_name:
+                brand_name_old = brand_name
+            if category_name_old:
+                category_name_old = category_name
             # if features:
             #     extra_features = await self._get_features(features)
             if lowest_price:
@@ -609,19 +652,19 @@ class ExplorationAgent(FeatureProductAgent):
             if score is not None:
                 score_old = score
             extra_features = {}
-            if count >= 1:
-                result = self._get_member_random_keys(base_product_id, city_id, brand_id, cetegory_id, extra_features, lowest_price_old,
+            if count >= 4:
+                result = self._get_member_random_keys(product_name_old, city_id, brand_name, category_name, extra_features, lowest_price_old,
                                          highest_price_old, has_warranty_old, score_old, count)
                 if result:
                 # if found member return it
                     return Response(message="null", base_random_keys=[], member_random_keys=[result])
-            self._update_exploration_table(chat_id, count+1, base_product_id, product_name_old, city_id, brand_id, cetegory_id, lowest_price_old, highest_price_old, has_warranty_old, score_old)
-            response_text = await self._generate_response_text(base_product_id, city_id, brand_id, cetegory_id, lowest_price_old, highest_price_old, has_warranty_old, score_old, count)
+            self._update_exploration_table(chat_id, count+1, base_product_id, product_name_old, city_id, brand_name_old, category_name_old, lowest_price_old, highest_price_old, has_warranty_old, score_old)
+            response_text = await self._generate_response_text(base_product_id, city_id, brand_name_old, category_name_old, lowest_price_old, highest_price_old, has_warranty_old, score_old, count)
             return Response(message=response_text, base_random_keys=[], member_random_keys=[])
         else:
             # after 5 times try to find the member
             extra_features = {}
-            member_random_keys = self._get_member_random_keys(base_product_id, city_id, brand_id, cetegory_id, extra_features, lowest_price_old, highest_price_old, has_warranty_old, score_old, count)
+            member_random_keys = self._get_member_random_keys(base_product_id, city_id, brand_name_old, category_name_old, extra_features, lowest_price_old, highest_price_old, has_warranty_old, score_old, count)
             if member_random_keys:
                 return Response(message="", base_random_keys=[], member_random_keys=[member_random_keys])
             else:
@@ -634,12 +677,10 @@ if __name__ == '__main__':
         template_format="jinja2"
     )
     exploration_agent = ExplorationAgent(feature_prompt_template)
-    chat_id = 't472-3d7d8435-dff8efff0-412hhbva-zxcva603-54j7bbdhnndf2e14cdffgfe'
+    chat_id = '11'
     prompt_steps = [
-        "سلام! من به دنبال یک دستگاه بخور و رطوبت ساز هستم. می‌خواهم از آن برای بهبود کیفیت هوای خانه‌ام استفاده کنم. آیا می‌توانید به من کمک کنید تا یک فروشنده مناسب پیدا کنم؟",
-        "من به دنبال دستگاه بخور سرد هستم و می‌خواهم آن را از تهران تهیه کنم. برند خاصی مد نظرم نیست و ضمانت کالا هم برایم مهم نیست. قیمت حدودی که در نظر دارم بین ۳۳۰۰۰۰۰ تا ۳۷۰۰۰۰۰ تومان است. آیا می‌توانید به من کمک کنید؟",
-        "برند خاصی مد نظرم نیست و ضمانت کالا هم برایم مهم نیست. آیا می‌توانید به من کمک کنید تا فروشنده مناسبی پیدا کنم؟",
-        "همانطور که گفتم، برند خاصی مد نظرم نیست و ضمانت کالا هم برایم مهم نیست. آیا می‌توانید به من کمک کنید تا فروشنده مناسبی پیدا کنم؟",
+        "سلام! من دنبال یه اجاق گاز خوب می‌گردم که برای آشپزخونه‌ام مناسب باشه. می‌خوام یه اجاق گاز با کیفیت و با قیمت مناسب پیدا کنم. می‌تونید به من کمک کنید؟",
+
     ]
     for prompt_step in prompt_steps:
         res = asyncio.run(exploration_agent.process_query(prompt_step, chat_id))

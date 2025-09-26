@@ -1,5 +1,5 @@
 features_dict = {
-    "stock_status": "وضعیت موجودی یا وضعیت نو بودن",
+    "stock_status": "نو",
     "originality": "اصالت",
     "piece_count": "تعداد قطعات، تعداد تکه‌ها",
     "material": "جنس",

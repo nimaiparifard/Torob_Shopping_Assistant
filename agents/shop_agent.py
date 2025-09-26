@@ -39,7 +39,7 @@ class ShoppingAgent(SpecificProductAgent):
             # استفاده از نمونه‌ها برای few-shot learning
             few_shot_examples = "\n".join([
                 f"ورودی: {sample['input']}\nخروجی: {json.dumps(sample, ensure_ascii=False, separators=(',', ':'))}"
-                for sample in route_task_shop_samples[:3]  # استفاده از 3 نمونه اول
+                for sample in route_task_shop_samples  # استفاده از 3 نمونه اول
             ])
             
             user_content = f"{few_shot_examples}\n\nورودی: {query}\nخروجی:"
@@ -341,8 +341,7 @@ async def main():
     agent = ShoppingAgent(prompt_template)
 
     test_queries = [
-        "گوشت کوب برقی مولینکس مدل DD65J827 ظرفیت ۳ لیتر چند کاره: چند فروشگاه با ضمانت این محصول را عرضه می‌کنند؟",
-        "در محصول تابلو معرق سنگ طبیعی سایز ۱.۶ متر طرح ۹، چند فروشگاه آن را با گارانتی عرضه می‌کنند؟"
+    "حداقل قیمت در محصول پایه رخت اویزجاکفشی مدل D104 چقدر است؟",
     ]
 
     for query in test_queries:

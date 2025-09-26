@@ -44,7 +44,7 @@ class Router:
         try:
             # Prepare few-shot examples for the LLM
             examples_text = ""
-            for sample in router_scenario_type_samples[:10]:  # Use first 10 examples
+            for sample in router_scenario_type_samples:  # Use first 10 examples
                 examples_text += f"Input: {sample['input']}\nOutput: {{\"scenario_type\": \"{sample['scenario_type']}\"}}\n\n"
             
             # Create the prompt

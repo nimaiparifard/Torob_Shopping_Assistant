@@ -124,9 +124,9 @@ if __name__ == "__main__":
     # for product in results:
     #     print(f"{product['persian_name']} -> {product['random_key']}")
 
-    #"هیچ ویژگی‌ای برای محصول 'ست کابینت و روشویی دلفین مدل ZN-R13-W-6040 به همراه آینه و باکس' یافت نشد.
-    search_term = "بخور"
-    search_term_2 = "دستگاه"
+    #حداقل قیمت در محصول پایه رخت اویزجاکفشی مدل D104 چقدر است؟
+    search_term = "جاکفشی"
+    search_term_2 = " رخت اویز"
     a = f"%{search_term}%"
     b = f"%{search_term_2}%"
     results = db.query(
@@ -139,21 +139,22 @@ if __name__ == "__main__":
         print(f"{product['persian_name']} -> {product['random_key']} extra: {product['extra_features']}")
     # print("----")
     # #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
-    # search_term = "آبمیوه گیری"
-    # search_term_2 = "وگاتی"
-    # search_term_3 = "چندکاره"
-    # a = f"%{search_term}%"
-    # b = f"%{search_term_2}%"
-    # c = f"%{search_term_3}%"
-    # results = db.query(
-    #     "SELECT random_key, persian_name, extra_features FROM base_products"
-    #     " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
-    #     (a, b , c)
-    # )
-    # print(len(results))
-    # for product in results:
-    #     print(f"{product['persian_name']} -> {product['random_key']}")
-    #
+    search_term = "یخچال"
+    search_term_2 = "ساید بای ساید"
+    search_term_4 = "فریزر"
+    search_term_3 = "لایف"
+    a = f"%{search_term}%"
+    b = f"%{search_term_2}%"
+    c = f"%{search_term_3}%"
+    results = db.query(
+        "SELECT random_key, persian_name, extra_features, category_id FROM base_products"
+        " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
+        (a, b , c)
+    )
+    print(len(results))
+    for product in results:
+        print(f"{product['persian_name']} -> {product['random_key']}, caregory: {product['category_id']}")
+
     # print("----")
     # #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
     # search_term = "فرشینه"
@@ -180,27 +181,35 @@ if __name__ == "__main__":
     #     'SELECT persian_name FROM base_products WHERE random_key = ?', (random_key,)
     # )
     # print(f"Product name: {results[0]['persian_name']}" if results else "No product found")
-    category_name = "بخور"
-    a = f"%{category_name}%"
+    # category_name = "بخور"
+    # a = f"%{category_name}%"
+    # res = db.query(
+    #     "SELECT id, title FROM categories WHERE title LIKE ? LIMIT 5",
+    #     (a,)
+    # )
+    # for r in res:
+    #     print(f"Category name: {r['title']}")
+    # category_name = "دستگاه"
+    # a = f"%{category_name}%"
+    # res = db.query(
+    #     "SELECT id, title FROM categories WHERE title LIKE ? LIMIT 5",
+    #     (a,)
+    # )
+    # for r in res:
+    #     print(f"Category name: {r['title']}")
+    # category_name = "بنشن"
+    # a = f"%{category_name}%"
+    # res = db.query(
+    #     "SELECT id, title FROM categories WHERE title LIKE ?",
+    #     (a,)
+    # )
+    # for r in res:
+    #     print(f"Category name: {r['title']}")
+
+    id = 2461
     res = db.query(
-        "SELECT id, title FROM categories WHERE title LIKE ? LIMIT 5",
-        (a,)
-    )
-    for r in res:
-        print(f"Category name: {r['title']}")
-    category_name = "دستگاه"
-    a = f"%{category_name}%"
-    res = db.query(
-        "SELECT id, title FROM categories WHERE title LIKE ? LIMIT 5",
-        (a,)
-    )
-    for r in res:
-        print(f"Category name: {r['title']}")
-    category_name = "بنشن"
-    a = f"%{category_name}%"
-    res = db.query(
-        "SELECT id, title FROM categories WHERE title LIKE ?",
-        (a,)
+        "SELECT id, title FROM categories WHERE id = ?",
+        (id,)
     )
     for r in res:
         print(f"Category name: {r['title']}")

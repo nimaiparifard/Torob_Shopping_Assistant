@@ -177,7 +177,7 @@ class ComparisonAgent(FeatureProductAgent):
             # استفاده از نمونه‌ها برای few-shot learning
             few_shot_examples = "\n".join([
                 f"ورودی: {sample['final_explanation']}\nخروجی: {json.dumps(sample, ensure_ascii=False, separators=(',', ':'))}"
-                for sample in compare_final_decide_samples[:3]  # استفاده از 3 نمونه اول
+                for sample in compare_final_decide_samples  # استفاده از 3 نمونه اول
             ])
             
             user_content = f"""
@@ -502,7 +502,7 @@ class ComparisonAgent(FeatureProductAgent):
             # استفاده از نمونه‌ها برای few-shot learning
             few_shot_examples = "\n".join([
                 f"ورودی: {sample['input']}\nخروجی: {json.dumps(sample, ensure_ascii=False, separators=(',', ':'))}"
-                for sample in find_main_feature_of_general_comapre_samples[:5]  # استفاده از 5 نمونه اول
+                for sample in find_main_feature_of_general_comapre_samples  # استفاده از 5 نمونه اول
             ])
             
             user_content = f"{few_shot_examples}\n\nورودی: {query}\nخروجی:"

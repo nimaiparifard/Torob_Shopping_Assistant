@@ -89,7 +89,7 @@ class SpecificProductAgent:
             # استفاده از نمونه‌ها برای few-shot learning
             few_shot_examples = "\n".join([
                 f"ورودی: {sample['input']}\nخروجی:\n" + "\n".join(sample['important_parts'])
-                for sample in find_important_part_samples[:3]  # استفاده از 3 نمونه اول
+                for sample in find_important_part_samples  # استفاده از 3 نمونه اول
             ])
 
             user_content = f"{few_shot_examples}\n\nورودی: {product_name}\nخروجی:"

@@ -60,7 +60,7 @@ class ProductImageAgent(SpecificProductAgent):
         try:
             # Call OpenAI Vision API to extract category
             response = await self.client.chat.completions.create(
-                model="gpt-40-mini",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
@@ -255,7 +255,7 @@ class ProductImageAgent(SpecificProductAgent):
             
             # Call OpenAI Vision API to extract phrased names
             response = await self.client.chat.completions.create(
-                model="gpt-40-mini",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
@@ -676,7 +676,7 @@ class ProductImageAgent(SpecificProductAgent):
             
             # Call OpenAI Vision API to make final decision
             response = await self.client.chat.completions.create(
-                model="gpt-40-mini",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
