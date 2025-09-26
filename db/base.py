@@ -124,9 +124,9 @@ if __name__ == "__main__":
     # for product in results:
     #     print(f"{product['persian_name']} -> {product['random_key']}")
 
-    #من دنبال آبمیوه گیری وگاتی مدل VE255
-    search_term = "وگاتی"
-    search_term_2 = "VE255"
+    #"هیچ ویژگی‌ای برای محصول 'ست کابینت و روشویی دلفین مدل ZN-R13-W-6040 به همراه آینه و باکس' یافت نشد.
+    search_term = "بخور"
+    search_term_2 = "دستگاه"
     a = f"%{search_term}%"
     b = f"%{search_term_2}%"
     results = db.query(
@@ -137,50 +137,73 @@ if __name__ == "__main__":
     print(len(results))
     for product in results:
         print(f"{product['persian_name']} -> {product['random_key']} extra: {product['extra_features']}")
-    print("----")
-    #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
-    search_term = "آبمیوه گیری"
-    search_term_2 = "وگاتی"
-    search_term_3 = "چندکاره"
-    a = f"%{search_term}%"
-    b = f"%{search_term_2}%"
-    c = f"%{search_term_3}%"
-    results = db.query(
-        "SELECT random_key, persian_name, extra_features FROM base_products"
-        " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
-        (a, b , c)
+    # print("----")
+    # #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
+    # search_term = "آبمیوه گیری"
+    # search_term_2 = "وگاتی"
+    # search_term_3 = "چندکاره"
+    # a = f"%{search_term}%"
+    # b = f"%{search_term_2}%"
+    # c = f"%{search_term_3}%"
+    # results = db.query(
+    #     "SELECT random_key, persian_name, extra_features FROM base_products"
+    #     " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
+    #     (a, b , c)
+    # )
+    # print(len(results))
+    # for product in results:
+    #     print(f"{product['persian_name']} -> {product['random_key']}")
+    #
+    # print("----")
+    # #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
+    # search_term = "فرشینه"
+    # search_term_2 = "1 متر"
+    # search_term_3 = "04"
+    # search_term_4 = "آشپزخانه"
+    # a = f"%{search_term}%"
+    # b = f"%{search_term_2}%"
+    # c = f"%{search_term_3}%"
+    # d = f"%{search_term_4}%"
+    # results = db.query(
+    #     "SELECT random_key, persian_name, extra_features FROM base_products"
+    #     " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
+    #     (a, b , c, d)
+    # )
+    # print(len(results))
+    # for product in results:
+    #     print(f"{product['persian_name']} -> {product['random_key']}")
+    #
+    # print("----")
+    # print("check random key is correct in members table")
+    # random_key = 'matdva'
+    # results = db.query(
+    #     'SELECT persian_name FROM base_products WHERE random_key = ?', (random_key,)
+    # )
+    # print(f"Product name: {results[0]['persian_name']}" if results else "No product found")
+    category_name = "بخور"
+    a = f"%{category_name}%"
+    res = db.query(
+        "SELECT id, title FROM categories WHERE title LIKE ? LIMIT 5",
+        (a,)
     )
-    print(len(results))
-    for product in results:
-        print(f"{product['persian_name']} -> {product['random_key']}")
-
-    print("----")
-    #  یخچال فریزر کمبی جی‌ پلاس مدل M5320
-    search_term = "فرشینه"
-    search_term_2 = "1 متر"
-    search_term_3 = "04"
-    search_term_4 = "آشپزخانه"
-    a = f"%{search_term}%"
-    b = f"%{search_term_2}%"
-    c = f"%{search_term_3}%"
-    d = f"%{search_term_4}%"
-    results = db.query(
-        "SELECT random_key, persian_name, extra_features FROM base_products"
-        " WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ?",
-        (a, b , c, d)
+    for r in res:
+        print(f"Category name: {r['title']}")
+    category_name = "دستگاه"
+    a = f"%{category_name}%"
+    res = db.query(
+        "SELECT id, title FROM categories WHERE title LIKE ? LIMIT 5",
+        (a,)
     )
-    print(len(results))
-    for product in results:
-        print(f"{product['persian_name']} -> {product['random_key']}")
-
-    print("----")
-    print("check random key is correct in members table")
-    random_key = 'matdva'
-    results = db.query(
-        'SELECT persian_name FROM base_products WHERE random_key = ?', (random_key,)
+    for r in res:
+        print(f"Category name: {r['title']}")
+    category_name = "بنشن"
+    a = f"%{category_name}%"
+    res = db.query(
+        "SELECT id, title FROM categories WHERE title LIKE ?",
+        (a,)
     )
-    print(f"Product name: {results[0]['persian_name']}" if results else "No product found")
-
+    for r in res:
+        print(f"Category name: {r['title']}")
     # results = db.query(
     #     """
     #     SELECT DISTINCT m.random_key

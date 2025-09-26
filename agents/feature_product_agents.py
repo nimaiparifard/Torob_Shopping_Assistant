@@ -330,7 +330,7 @@ async def main():
     agent = FeatureProductAgent(prompt_template)
 
     test_queries = [
-        "آیا محصول باکس 60لیتری سایز همه مدل سایز - نارنجی / ۱۰اینچ به صورت نو موجود است یا دست دوم؟"
+        "هیچ ویژگی‌ای برای محصول 'ست کابینت و روشویی دلفین مدل ZN-R13-W-6040 به همراه آینه و باکس' یافت نشد.",
     ]
 
     for query in test_queries:
