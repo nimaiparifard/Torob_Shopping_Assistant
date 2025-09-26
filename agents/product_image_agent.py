@@ -249,7 +249,7 @@ class ProductImageAgent(SpecificProductAgent):
                 context_info += f"برند محصول: {brand_name}\n"
             
             # Prepare the user message
-            user_message = "نام‌های مختلف و عبارات کلیدی محصول اصلی در این تصویر را استخراج کن."
+            user_message = "یک نام با عبارت ههای دقیق برای شی اصلی این عکس تولید کن."
             if context_info:
                 user_message += f"\n\nاطلاعات اضافی:\n{context_info}"
             
@@ -421,7 +421,7 @@ class ProductImageAgent(SpecificProductAgent):
                             else:
                                 rows = db.query(
                                     "SELECT random_key, persian_name FROM base_products "
-                                    "WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ? LIMIT 5",
+                                    "WHERE persian_name LIKE ? AND persian_name LIKE ? AND persian_name LIKE ? LIMIT 2",
                                     (like_pattern, like_pattern_2, like_pattern_3)
                                 )
                         except Exception:

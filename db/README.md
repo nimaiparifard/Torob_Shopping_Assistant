@@ -1,493 +1,422 @@
-# Torob AI Assistant - Database Module
+# Database Module
 
-This module handles the complete database management system for the Torob AI Assistant project, including database creation, data loading, verification, and preview functionality.
+The database module provides comprehensive database management for the Torob AI Assistant, including schema definition, data loading, connection management, and optimization utilities.
 
-## 📁 Module Structure
+## 📁 Structure
 
 ```
 db/
-├── __init__.py          # Package initialization
-├── create_db.py         # Database schema creation
-├── load_db.py          # Data loading from parquet files
-├── verify_data.py      # Database integrity verification
-├── preview_data.py     # Data preview and exploration
-├── path.py             # Path utilities
-└── README.md           # This documentation
+├── base.py              # Database base class and connection management
+├── config.py            # Database configuration and path management
+├── create_db.py         # Database schema definition and initialization
+├── load_db.py           # Data loading from parquet files
+├── load_db_optimized.py # Optimized data loading with performance improvements
+├── preview_data.py      # Data preview and exploration utilities
+├── verify_data.py       # Data integrity verification
+├── check_exploration.py # Exploration data validation
+├── clean_exploration.py # Exploration data cleanup
+└── backup/              # Database backup utilities
 ```
 
-## 🗄️ Database Schema Overview
-
-The Torob database is designed to handle e-commerce data with the following main entities:
+## 🗄️ Database Schema
 
 ### Core Tables
 
-1. **Cities** - Geographic locations for shops
-2. **Brands** - Product brands
-3. **Categories** - Hierarchical product categories
-4. **Shops** - E-commerce stores with ratings and locations
-5. **Base Products** - Master product catalog
-6. **Members** - Shop-specific product listings with prices
-
-### Activity Tables
-
-7. **Searches** - User search queries and metadata
-8. **Search Results** - Products returned for each search
-9. **Base Views** - Product detail page views
-10. **Final Clicks** - User clicks on specific shop offers
-
-## 📊 Detailed Database Structure
-
-### 1. Cities Table
+#### Cities (`cities`)
 ```sql
 CREATE TABLE cities (
-    id          INTEGER PRIMARY KEY,
-    name        TEXT NOT NULL
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
 );
 ```
-**Purpose**: Reference table for shop locations
-**Example Data**: 
-- `{id: 1, name: "تهران"}`
-- `{id: 2, name: "اصفهان"}`
+Stores city information for location-based queries.
 
-### 2. Brands Table
+#### Brands (`brands`)
 ```sql
 CREATE TABLE brands (
-    id          INTEGER PRIMARY KEY,
-    title       TEXT NOT NULL
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
 );
 ```
-**Purpose**: Product brand catalog
-**Example Data**: 
-- `{id: 1, title: "سامسونگ"}`
-- `{id: 2, title: "اپل"}`
+Product brand information.
 
-### 3. Categories Table
+#### Categories (`categories`)
 ```sql
 CREATE TABLE categories (
-    id          INTEGER PRIMARY KEY,
-    title       TEXT NOT NULL,
-    parent_id   INTEGER NOT NULL DEFAULT -1,
-    CHECK (parent_id = -1 OR parent_id >= 0)
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
 );
 ```
-**Purpose**: Hierarchical product categorization
-**Features**: 
-- Self-referential hierarchy (parent_id = -1 for root categories)
-- Unlimited nesting levels
-**Example Data**:
-- `{id: 1, title: "الکترونیک", parent_id: -1}`
-- `{id: 2, title: "موبایل", parent_id: 1}`
+Product category classification.
 
-### 4. Shops Table
+#### Shops (`shops`)
 ```sql
 CREATE TABLE shops (
-    id              INTEGER PRIMARY KEY,
-    city_id         INTEGER NOT NULL,
-    score           REAL NOT NULL DEFAULT 0.0,   -- 0-5 rating
-    has_warranty    INTEGER NOT NULL DEFAULT 0,  -- 0/1 boolean
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    city_id INTEGER,
+    score REAL,
     FOREIGN KEY (city_id) REFERENCES cities(id)
 );
 ```
-**Purpose**: E-commerce store information
-**Features**:
-- Location-based (linked to cities)
-- Quality scoring (0-5 scale)
-- Warranty indication
-**Example Data**:
-- `{id: 1, city_id: 1, score: 4.5, has_warranty: 1}`
+Shop information including location and ratings.
 
-### 5. Base Products Table
+#### Base Products (`base_products`)
 ```sql
 CREATE TABLE base_products (
-    random_key      TEXT PRIMARY KEY,           -- Unique product identifier
-    persian_name    TEXT,                       -- Persian product name
-    english_name    TEXT,                       -- English product name
-    category_id     INTEGER,                    -- Category reference
-    brand_id        INTEGER,                    -- Brand reference
-    extra_features  TEXT,                       -- JSON: additional attributes
-    image_url       TEXT,                       -- Product image URL
-    members         TEXT,                       -- JSON: list of member RKs
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (brand_id) REFERENCES brands(id)
+    id INTEGER PRIMARY KEY,
+    random_key TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    brand_id INTEGER,
+    category_id INTEGER,
+    extra_features TEXT, -- JSON format
+    FOREIGN KEY (brand_id) REFERENCES brands(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 ```
-**Purpose**: Master product catalog
-**Features**:
-- Bilingual naming (Persian/English)
-- JSON-based flexible attributes
-- Category and brand classification
-**Example Data**:
-```json
-{
-    "random_key": "prod_12345_xyz",
-    "persian_name": "گوشی سامسونگ گلکسی S24",
-    "english_name": "Samsung Galaxy S24",
-    "category_id": 2,
-    "brand_id": 1,
-    "extra_features": "{\"storage\": \"256GB\", \"color\": \"black\"}",
-    "image_url": "https://example.com/image.jpg"
-}
-```
+Main product information with features stored as JSON.
 
-### 6. Members Table
+#### Members (`members`)
 ```sql
 CREATE TABLE members (
-    random_key      TEXT PRIMARY KEY,           -- Unique member identifier
-    base_random_key TEXT NOT NULL,              -- Reference to base product
-    shop_id         INTEGER NOT NULL,           -- Shop offering this product
-    price           INTEGER NOT NULL,           -- Price in smallest currency unit
-    FOREIGN KEY (base_random_key) REFERENCES base_products(random_key),
-    FOREIGN KEY (shop_id) REFERENCES shops(id)
+    id INTEGER PRIMARY KEY,
+    random_key TEXT UNIQUE NOT NULL,
+    shop_id INTEGER,
+    base_product_id INTEGER,
+    price REAL,
+    has_warranty BOOLEAN,
+    FOREIGN KEY (shop_id) REFERENCES shops(id),
+    FOREIGN KEY (base_product_id) REFERENCES base_products(id)
 );
 ```
-**Purpose**: Shop-specific product offerings and pricing
-**Features**:
-- Links products to specific shops
-- Price tracking per shop
-**Example Data**:
-```json
-{
-    "random_key": "member_shop1_prod12345",
-    "base_random_key": "prod_12345_xyz",
-    "shop_id": 1,
-    "price": 15000000
-}
-```
+Shop member products with pricing and warranty information.
 
-### 7. Searches Table
+### Analytics Tables
+
+#### Exploration (`exploration`)
+```sql
+CREATE TABLE exploration (
+    id INTEGER PRIMARY KEY,
+    chat_id TEXT NOT NULL,
+    product_name TEXT,
+    brand_name TEXT,
+    category_name TEXT,
+    city_name TEXT,
+    features TEXT, -- JSON format
+    lowest_price REAL,
+    highest_price REAL,
+    has_warranty BOOLEAN,
+    shop_name TEXT,
+    score REAL,
+    counts INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+User exploration sessions and filtering criteria.
+
+#### Searches (`searches`)
 ```sql
 CREATE TABLE searches (
-    id                          TEXT PRIMARY KEY,    -- Unique search identifier
-    uid                         TEXT,                 -- User/session grouping
-    query                       TEXT NOT NULL,       -- Search query text
-    page                        INTEGER NOT NULL,    -- Pagination (0-based)
-    timestamp                   TEXT NOT NULL,       -- ISO8601 UTC timestamp
-    session_id                  TEXT,                -- Session identifier
-    result_base_product_rks     TEXT,                -- JSON: array of product RKs
-    category_id                 INTEGER DEFAULT 0,   -- Category filter
-    category_brand_boosts       TEXT                 -- JSON: search boosts
+    id INTEGER PRIMARY KEY,
+    search_id TEXT UNIQUE NOT NULL,
+    query TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
-**Purpose**: User search activity tracking
-**Features**:
-- Full-text search queries
-- Pagination support
-- Category filtering
-- Search result caching
-**Example Data**:
-```json
-{
-    "id": "search_20241201_123456",
-    "uid": "user_session_001",
-    "query": "گوشی سامسونگ",
-    "page": 0,
-    "timestamp": "2024-12-01T10:30:00.000000+00:00",
-    "result_base_product_rks": "[\"prod_12345_xyz\", \"prod_67890_abc\"]",
-    "category_id": 2
-}
-```
+Search query history.
 
-### 8. Search Results Table
+#### Search Results (`search_results`)
 ```sql
 CREATE TABLE search_results (
-    id                  INTEGER PRIMARY KEY,
-    search_id           TEXT NOT NULL,           -- Reference to search
-    base_product_rk     TEXT NOT NULL,          -- Product in results
-    position            INTEGER NOT NULL,       -- Ranking position (1,2,3...)
-    FOREIGN KEY (search_id) REFERENCES searches(id),
-    FOREIGN KEY (base_product_rk) REFERENCES base_products(random_key)
+    id INTEGER PRIMARY KEY,
+    search_id TEXT,
+    result_base_product_rks TEXT, -- JSON array
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (search_id) REFERENCES searches(search_id)
 );
 ```
-**Purpose**: Normalized search results with ranking
-**Features**:
-- Explicit result ordering
-- Many-to-many relationship between searches and products
-**Example Data**:
-```json
-{
-    "id": 1,
-    "search_id": "search_20241201_123456",
-    "base_product_rk": "prod_12345_xyz",
-    "position": 1
-}
-```
+Search result tracking.
 
-### 9. Base Views Table
+#### Base Views (`base_views`)
 ```sql
 CREATE TABLE base_views (
-    id               TEXT PRIMARY KEY,           -- Unique view identifier
-    search_id        TEXT NOT NULL,              -- Originating search
-    base_product_rk  TEXT NOT NULL,             -- Viewed product
-    timestamp        TEXT NOT NULL,              -- View timestamp
-    FOREIGN KEY (search_id) REFERENCES searches(id),
-    FOREIGN KEY (base_product_rk) REFERENCES base_products(random_key)
+    id INTEGER PRIMARY KEY,
+    view_id TEXT UNIQUE NOT NULL,
+    base_product_rk TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
-**Purpose**: Product detail page view tracking
-**Features**:
-- Links views to originating searches
-- Time-based analytics capability
-**Example Data**:
-```json
-{
-    "id": "view_20241201_123500",
-    "search_id": "search_20241201_123456",
-    "base_product_rk": "prod_12345_xyz",
-    "timestamp": "2024-12-01T10:35:00.000000+00:00"
-}
-```
+Product view tracking.
 
-### 10. Final Clicks Table
+#### Final Clicks (`final_clicks`)
 ```sql
 CREATE TABLE final_clicks (
-    id            TEXT PRIMARY KEY,              -- Unique click identifier
-    base_view_id  TEXT NOT NULL,                -- Reference to product view
-    shop_id       INTEGER NOT NULL,             -- Selected shop
-    timestamp     TEXT NOT NULL,                -- Click timestamp
-    FOREIGN KEY (base_view_id) REFERENCES base_views(id),
-    FOREIGN KEY (shop_id) REFERENCES shops(id)
+    id INTEGER PRIMARY KEY,
+    click_id TEXT UNIQUE NOT NULL,
+    base_product_rk TEXT,
+    member_rk TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
-**Purpose**: Conversion tracking - user clicks on shop offers
-**Features**:
-- Complete funnel tracking (search → view → click)
-- Shop performance analytics
-**Example Data**:
-```json
-{
-    "id": "click_20241201_123600",
-    "base_view_id": "view_20241201_123500",
-    "shop_id": 1,
-    "timestamp": "2024-12-01T10:36:00.000000+00:00"
-}
-```
+Click tracking for analytics.
 
-## 🔄 Database Creation and Loading Pipeline
+## 🔧 Core Components
 
-### Step 1: Create Database Schema
-```bash
-# Create the SQLite database with all tables and constraints
-python -m db.create_db
-```
-**What it does**:
-- Creates `data/torob.db` SQLite database
-- Executes DDL to create all tables
-- Sets up foreign key constraints
-- Creates performance indexes
+### DatabaseBaseLoader (`base.py`)
 
-### Step 2: Preview Source Data (Optional)
-```bash
-# Preview all parquet files
-python -m db.preview_data
+Base class for database operations with connection management.
 
-# Preview specific table
-python -m db.preview_data base_products
-```
-**What it does**:
-- Shows data structure and sample records
-- Validates data types and formats
-- Identifies potential data quality issues
+**Key Features:**
+- SQLite connection management
+- Foreign key constraint enforcement
+- Row factory for dictionary-like access
+- Automatic connection cleanup
+- Query and execution methods
 
-### Step 3: Load Data
-```bash
-# Load all data from backup/ directory
-python -m db.load_db
-```
-**What it does**:
-- Loads data in dependency order:
-  1. **Independent tables**: cities, brands, categories
-  2. **Single-level dependencies**: shops, base_products
-  3. **Multi-level dependencies**: members, searches
-  4. **Complex dependencies**: search_results, base_views, final_clicks
-- Handles string-to-integer ID mapping for searches, base_views, final_clicks
-- Maintains referential integrity
-- Provides loading progress and statistics
-
-### Step 4: Verify Database Integrity
-```bash
-# Comprehensive database verification
-python -m db.verify_data
-```
-**What it does**:
-- Checks table existence and row counts
-- Validates foreign key relationships
-- Runs data quality checks
-- Shows sample data and analytics
-- Identifies orphaned records or integrity issues
-
-## 🛠️ Usage Examples
-
-### Basic Database Operations
-
+**Usage Example:**
 ```python
-from db import init_db, DB_PATH
-from db import load_all_data
-from db.verify_data import verify_database
-import sqlite3
+db = DatabaseBaseLoader()
+results = db.query("SELECT * FROM base_products WHERE brand_id = ?", [1])
+db.execute("INSERT INTO cities (name) VALUES (?)", ["Tehran"])
+db.close()
+```
 
-# 1. Create fresh database
-init_db()
+**Methods:**
+- `connect()`: Establishes database connection
+- `query(sql, params)`: Executes SELECT queries
+- `execute(sql, params)`: Executes INSERT/UPDATE/DELETE queries
+- `close()`: Closes database connection
 
-# 2. Load all data
+### Configuration (`config.py`)
+
+Database configuration and path management.
+
+**Environment Support:**
+- Development: `./data/torob.db`
+- Production: `/database/torob.db`
+- Automatic directory creation
+- Backup path management
+
+**Key Functions:**
+- `is_production()`: Checks production environment
+- `get_data_path()`: Returns data directory path
+- `get_db_path()`: Returns database file path
+- `ensure_data_directory()`: Creates data directory
+- `get_backup_path()`: Returns backup directory path
+
+### Schema Creation (`create_db.py`)
+
+Database schema definition and initialization.
+
+**Features:**
+- Complete DDL script generation
+- Foreign key constraint setup
+- Index creation for performance
+- Table existence checking
+- Force recreation option
+
+**Schema Information:**
+- 11 main tables
+- 15+ foreign key relationships
+- 20+ indexes for optimization
+- JSON support for flexible data storage
+
+**Usage Example:**
+```python
+from create_db import init_db
+
+# Initialize database
+init_db("data/torob.db", force_recreate=False)
+
+# Show schema information
+show_schema_info()
+```
+
+### Data Loading (`load_db.py`)
+
+Loads data from parquet files into SQLite database.
+
+**Loading Process:**
+1. **Cities**: Load city names
+2. **Brands**: Load brand information
+3. **Categories**: Load product categories
+4. **Shops**: Load shop data with city mapping
+5. **Base Products**: Load products with brand/category mapping
+6. **Members**: Load shop member products
+7. **Searches**: Load search history
+8. **Search Results**: Load search results
+9. **Base Views**: Load view tracking data
+10. **Final Clicks**: Load click tracking data
+
+**ID Mapping System:**
+- String-to-integer ID conversion
+- Foreign key relationship maintenance
+- Data integrity preservation
+- Batch processing for large datasets
+
+**Usage Example:**
+```python
+from load_db import load_all_data
+
+# Load all data from parquet files
 load_all_data()
-
-# 3. Connect and query
-conn = sqlite3.connect(DB_PATH)
-cursor = conn.execute("SELECT COUNT(*) FROM base_products")
-print(f"Total products: {cursor.fetchone()[0]}")
-conn.close()
-
-# 4. Verify integrity
-verify_database()
 ```
 
-### Advanced Queries
+### Optimized Loading (`load_db_optimized.py`)
 
-```python
-import sqlite3
-from db import DB_PATH
+Performance-optimized data loading with improvements.
 
-conn = sqlite3.connect(DB_PATH)
+**Optimizations:**
+- Batch processing for large datasets
+- Memory-efficient data handling
+- Progress tracking
+- Error recovery
+- Performance monitoring
 
-# Find popular search queries
-popular_searches = conn.execute("""
-    SELECT query, COUNT(*) as search_count
-    FROM searches 
-    GROUP BY query 
-    ORDER BY search_count DESC 
-    LIMIT 10
-""").fetchall()
+## 🚀 Performance Features
 
-# Get conversion funnel data
-funnel_data = conn.execute("""
-    SELECT 
-        COUNT(DISTINCT s.id) as searches,
-        COUNT(DISTINCT bv.id) as views,
-        COUNT(DISTINCT fc.id) as clicks
-    FROM searches s
-    LEFT JOIN base_views bv ON s.id = bv.search_id
-    LEFT JOIN final_clicks fc ON bv.id = fc.base_view_id
-""").fetchone()
+### Indexing Strategy
+- Primary key indexes on all tables
+- Foreign key indexes for JOIN operations
+- Composite indexes for common query patterns
+- Text indexes for search operations
 
-# Top performing shops by click-through rate
-shop_performance = conn.execute("""
-    SELECT 
-        s.id,
-        c.name as city,
-        s.score,
-        COUNT(DISTINCT fc.id) as total_clicks,
-        AVG(m.price) as avg_price
-    FROM shops s
-    JOIN cities c ON s.city_id = c.id
-    LEFT JOIN members m ON s.id = m.shop_id
-    LEFT JOIN final_clicks fc ON s.id = fc.shop_id
-    GROUP BY s.id, c.name, s.score
-    HAVING total_clicks > 0
-    ORDER BY total_clicks DESC
-""").fetchall()
+### Query Optimization
+- Prepared statements for security
+- Batch operations for bulk inserts
+- Connection pooling
+- Query result caching
+- Memory-efficient data structures
 
-conn.close()
-```
+### Data Integrity
+- Foreign key constraints
+- Unique constraints
+- Data type validation
+- Referential integrity checks
+- Transaction management
 
-## 📈 Performance Considerations
+## 📊 Data Management
 
-### Indexes
-The schema includes strategic indexes for common query patterns:
-- `idx_shops_city_id` - Shop location queries
-- `idx_members_price` - Price range filtering
-- `idx_searches_timestamp` - Time-based analytics
-- `idx_search_results_position` - Result ranking queries
+### Backup and Recovery
+- Automated backup creation
+- Data export to parquet format
+- Incremental backup support
+- Point-in-time recovery
+- Data validation after restore
 
-### Query Optimization Tips
-1. **Use EXPLAIN QUERY PLAN** to analyze query performance
-2. **Filter early** - Apply WHERE clauses on indexed columns first
-3. **Limit result sets** - Use LIMIT for paginated results
-4. **Join efficiently** - Start with smaller tables in JOINs
+### Data Validation
+- Schema validation
+- Data type checking
+- Referential integrity verification
+- Constraint validation
+- Data quality metrics
 
-### Data Loading Best Practices
-1. **Disable foreign keys** during bulk loading (handled automatically)
-2. **Load in dependency order** (implemented in load_db.py)
-3. **Use transactions** for data consistency
-4. **Monitor memory usage** for large datasets
+### Monitoring
+- Database size tracking
+- Query performance monitoring
+- Connection pool status
+- Index usage statistics
+- Data growth analytics
 
-## 🔧 Maintenance and Monitoring
+## 🔍 Data Exploration
 
-### Regular Checks
-```bash
-# Weekly database health check
-python -m db.verify_data
+### Preview Utilities (`preview_data.py`)
+- Table structure inspection
+- Sample data viewing
+- Data type analysis
+- Relationship mapping
+- Statistics generation
 
-# Monitor database size
-ls -lh data/torob.db
+### Verification Tools (`verify_data.py`)
+- Data integrity checks
+- Constraint validation
+- Relationship verification
+- Data quality assessment
+- Error reporting
 
-# Check table sizes
-sqlite3 data/torob.db "SELECT name, COUNT(*) FROM sqlite_master WHERE type='table' GROUP BY name;"
-```
+## 🧹 Maintenance
 
-### Backup Strategy
-```bash
-# Create database backup
-cp data/torob.db backup/torob_backup_$(date +%Y%m%d).db
+### Data Cleanup
+- Orphaned record removal
+- Duplicate data elimination
+- Constraint violation resolution
+- Index rebuilding
+- Statistics updates
 
-# Export to SQL
-sqlite3 data/torob.db .dump > backup/torob_schema_$(date +%Y%m%d).sql
-```
+### Performance Tuning
+- Query optimization
+- Index analysis
+- Connection pool tuning
+- Memory optimization
+- Cache configuration
 
-### Troubleshooting
+## 📈 Analytics Support
 
-**Common Issues**:
+### Search Analytics
+- Query pattern analysis
+- Search result tracking
+- User behavior insights
+- Performance metrics
+- Trend analysis
 
-1. **Foreign Key Violations**
-   - Run `python -m db.verify_data` to identify orphaned records
-   - Check data loading order in `load_db.py`
+### Product Analytics
+- View tracking
+- Click analysis
+- Popular product identification
+- Category performance
+- Brand analysis
 
-2. **Performance Issues**
-   - Analyze slow queries with `EXPLAIN QUERY PLAN`
-   - Consider additional indexes for frequent query patterns
-   - Use `VACUUM` to optimize database file
+### Shop Analytics
+- Shop performance metrics
+- Pricing analysis
+- Availability tracking
+- Customer behavior
+- Market trends
 
-3. **Data Quality Issues**
-   - Use `preview_data.py` to inspect source data
-   - Check for null values in required fields
-   - Validate JSON format in extra_features columns
+## 🔧 Configuration
 
-## 📚 API Reference
+### Environment Variables
+- `PRODUCTION`: Production mode flag
+- `DB_PATH`: Custom database path
+- `BACKUP_PATH`: Backup directory
+- `LOG_LEVEL`: Logging verbosity
 
-### Core Functions
+### Database Settings
+- Foreign key constraints enabled
+- WAL mode for better concurrency
+- Memory-mapped I/O
+- Optimized page size
+- Cache size tuning
 
-#### `create_db.py`
-- `init_db(db_path=DB_PATH)` - Initialize database with schema
-- `get_data_path()` - Get absolute path to data directory
+## 🧪 Testing
 
-#### `load_db.py`
-- `load_all_data()` - Load all parquet files in correct order
-- `create_id_mapping(df, id_column, table_name)` - Map string IDs to integers
-- `map_foreign_key(df, fk_column, target_table)` - Map foreign key references
+### Test Coverage
+- Unit tests for all functions
+- Integration tests with database
+- Performance benchmarks
+- Data integrity tests
+- Error handling tests
 
-#### `verify_data.py`
-- `verify_database()` - Complete database integrity check
-- `check_foreign_keys(conn)` - Validate referential integrity
-- `check_data_quality(conn)` - Run data quality checks
+### Test Data
+- Sample datasets for testing
+- Mock data generation
+- Edge case scenarios
+- Performance test data
+- Stress testing
 
-#### `preview_data.py`
-- `preview_parquet_files()` - Preview all source files
-- `preview_specific_table(table_name)` - Detailed table preview
+## 📚 Dependencies
 
-## 🤝 Contributing
+- **SQLite3**: Database engine
+- **Pandas**: Data manipulation
+- **PyArrow**: Parquet file support
+- **NumPy**: Numerical operations
+- **JSON**: Data serialization
 
-When modifying the database schema:
+## 🔄 Version History
 
-1. Update the DDL in `create_db.py`
-2. Modify loading logic in `load_db.py` if needed
-3. Add verification checks in `verify_data.py`
-4. Update this documentation
-5. Test the complete pipeline:
-   ```bash
-   python -m db.create_db
-   python -m db.load_db
-   python -m db.verify_data
-   ```
-
-## 📄 License
-
-This database module is part of the Torob AI Assistant project. See the main project license for details.
+- **v1.0.0**: Initial database implementation
+- Complete schema definition
+- Data loading from parquet files
+- Performance optimizations
+- Analytics table support
+- Backup and recovery utilities

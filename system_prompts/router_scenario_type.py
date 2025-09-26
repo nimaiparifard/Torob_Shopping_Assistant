@@ -19,7 +19,6 @@ router_scenario_system_prompt = (
     "   - پرسش‌های عمومی بدون اشاره به محصول خاص "
 
     "۲. برای تشخیص 'exploration': "
-    "   - کلمات کلیدی: 'دنبال', 'می‌خوام', 'پیدا کن', 'فروشنده', 'فروشگاه', 'امتیاز', 'قیمت' "
     "   - معمولاً در انتها این سناریو بخش‌هایی مانند: 'ممنون می‌شوم کمک کنید'، 'ممنون می‌شوم اگر راهنمایی کنید'، 'آیا می‌توانید فروشگاهی با این مشخصات پیدا کنید؟'، 'می‌تونید به من کمک کنید تا یه فروشنده خوب پیدا کنم؟' "
     "   - جستجو با معیارهای مختلف (قیمت، برند، شهر، امتیاز فروشگاه) "
     "   - درخواست پیشنهاد محصولات "
@@ -31,6 +30,7 @@ router_scenario_system_prompt = (
     "   - کلمات کلیدی: 'می‌خواهم', 'نیاز دارم', 'سفارش', 'خریداری کنم', 'تهیه کنم' "
     "   - درخواست محصول با نام، کد، رنگ، طرح، سایز مشخص "
     "   - مثال: 'درخواست محصول فلاور بگ شامل رز سفید، آفتابگردان، عروس و ورونیکا' "
+    "اگر نام کامل محصو گفته بود و نگفته بود که ویژگی پیدا کن یا اسم فروشگاه نگفته بود و قیمت مطرح نکرده بود این یک تسک specific_product است."
 
     "۴. برای تشخیص 'feature_product': "
     "   - پرسش درباره ویژگی‌های فنی، مشخصات، یا جزئیات محصول "
@@ -62,9 +62,9 @@ router_scenario_system_prompt = (
     "   - 'specific_product': کاربر محصول خاصی را می‌خواهد (خرید، سفارش، تهیه) "
     "   - 'feature_product': کاربر درباره مشخصات/ویژگی‌های محصول سوال می‌پرسد "
     "۸. اگر پرسش با 'به من بگو'، 'چقدر'، 'چند'، 'ابعاد'، 'وزن' شروع می‌شود، 'feature_product' است "
-    "۹. اگر پرسش با 'می‌خواهم'، 'نیاز دارم'، 'سفارش' شروع می‌شود، 'specific_product' است "
-    " ۱۰. ممکن سوال کاربر در مورد ویژگی باشد و به طور معمول بیا نشود برای مثال در مورد نو بودن سوال می پرسد دقت کنی در این جا به عنوان ویژگی در نظر بگیری و سناریو را feature_product در نظر بگیری "
-    "11. اگر متن سوال کاربر شامل این 'عبارات اینکه لطفا کمک کنید'، 'اگر موجود دارید لطفا راهنمایی کنید'، 'می‌تونید کمکم کنید؟' 'آیا می‌تونید به من کمک کنید تا یه فروشنده خوب پیدا کنم?' 'ممنون می‌شم اگه راهنمایی کنید' اگر این عبارات را دیدی  exploration را انتخاب کن. "
+    # "۹. اگر پرسش با 'می‌خواهم'، 'نیاز دارم'، 'سفارش' شروع می‌شود، 'specific_product' است "
+    # " ۱۰. ممکن سوال کاربر در مورد ویژگی باشد و به طور معمول بیا نشود برای مثال در مورد نو بودن سوال می پرسد دقت کنی در این جا به عنوان ویژگی در نظر بگیری و سناریو را feature_product در نظر بگیری "
+    # "11. اگر متن سوال کاربر شامل این 'عبارات اینکه لطفا کمک کنید'، 'اگر موجود دارید لطفا راهنمایی کنید'، 'می‌تونید کمکم کنید؟' 'آیا می‌تونید به من کمک کنید تا یه فروشنده خوب پیدا کنم?' 'ممنون می‌شم اگه راهنمایی کنید' اگر این عبارات را دیدی  exploration را انتخاب کن. "
 
     "مثال‌های کلیدی: "
     "پرسش: 'سلام! من دنبال یه گیاه بونسای هستم که خیلی خاص و زیبا باشه. می‌خوام برای هدیه دادن استفاده کنم.' "
@@ -78,12 +78,76 @@ router_scenario_system_prompt = (
     "پرسش: 'درخواست محصول فلاور بگ شامل رز سفید، آفتابگردان، عروس و ورونیکا' "
     "خروجی درست: "
     '{"scenario_type": "specific_product"}. '
+    
+    'لطفاً فرش اتاق کودک و نوجوان طرح ۳ بعدی با کد ۸۱۰۱ را برای من بیابید.'
+     "خروجی درست:"
+     '{"scenario_type": "specific_product"}. '
+    ""
 )
 
 
 
 
 router_scenario_type_samples = [
+    {
+        "input": "بیشترین قیمت برای دستگاه بخور سرد شیائومی مدل F628S ظرفیت ۵ لیتر چقدر است؟",
+        "scenario_type": "shop"
+    },
+    {
+        "input": "بالاترین قیمت برای دستگاه بخور سرد شیائومی مدل F628S ظرفیت ۵ لیتر چقدر است؟",
+        "scenario_type": "shop"
+    },
+    {
+        "input": "پایین‌ترین نرخ خرید دستگاه تصفیه‌هوا فیلیپس مدل AC1215 در بازار چند است؟",
+        "scenario_type": "shop"
+    },
+    {
+        "input": "حداقل هزینه برای خرید کتری برقی بوش مدل TWK-8613 در فروشگاه‌های تهران چقدر است؟",
+        "scenario_type": "shop"
+    },
+    {
+        "input": "کمترین قیمت جاروبرقی سامسونگ مدل VC20 در سطح شهر قم چه میزان گزارش شده است؟",
+        "scenario_type": "shop"
+    },
+    {
+        "input": "پایین‌ترین مبلغ مورد نیاز برای خرید اسپرسوساز نوا مدل 149 همراه با ضمانت در بازار ایران چقدر است؟",
+        "scenario_type": "shop"
+    },
+    {
+        "input": "حداقل نرخ فروش سماور برقی پارس‌خزر ظرفیت ۴ لیتر در فروشگاه‌های آنلاین چند است؟",
+        "scenario_type": "shop"
+    },
+    {
+        "input": "بیشترین قیمت برای دستگاه بخور سرد شیائومی مدل F628S ظرفیت ۵ لیتر چقدر است؟",
+        "scenario_type": "shop"},
+    {
+        "input": "وضوح تلویزیون ال جی مدل UT80006 سایز ۵۰ اینچ Ultra HD 4K LED به من بگو",
+        "scenario_type": "feature_product"
+    },
+    {
+        "input": "آیا می\u200cتوانید بگویید جنس میز جلومبلی مدل تسلا از چه موادی ساخته شده است؟",
+        "scenario_type": "feature_product"
+    },
+    {
+        "input": "آیا میز بار DBP99 از چه جنسی ساخته شده است؟'",
+        "scenario_type": "feature_product"
+    },
+    {
+        "input": "تراکم قالی فرش 1200 شانه برجسته نقشه برکه زمینه یاسی - 12 متری چقدر است؟'",
+        "scenario_type": "feature_product"
+    },
+    {
+      "input": "سلام، من به دنبال خرید ساعت دیواری مدرن فلزی سایز 60 مدل 122 هستم. (پس کرایه)  اگر موجود دارید لطفا راهنمایی کنید. ممنون.",
+      "scenario_type": "specific_product",
+    },
+    {
+      "input": "لطفاً فرش اتاق کودک و نوجوان طرح ۳ بعدی با کد ۸۱۰۱ را برای من بیابید.",
+      "scenario_type": "specific_product",
+    },
+    {
+      "input": "سلام، لطفاً محصول \"مایکروفر بیمکث مدل Steam Cooker ظرف بخار پز Bimax\" را برای من پیدا کنید.",
+      "scenario_type": "specific_product",
+    },
     {
       "input": "سلام، می‌خواستم درباره وضعیت محصول برد یخچال فریزر دوو مدل R15 اطلاعاتی بگیرم. آیا این محصول نو است یا خیر؟",
       "scenario_type": "feature_product"
@@ -97,19 +161,7 @@ router_scenario_type_samples = [
         "scenario_type": "general"
     },
     {
-        "input": "return base random key dfdsdvsvxcvxcvf",
-        "scenario_type": "general"
-    },
-    {
-        "input": "return random key dfdASaew23rewfsdf",
-        "scenario_type": "general"
-    },
-    {
         "input": "output base random 334345434rfdf",
-        "scenario_type": "general"
-    },
-    {
-        "input": "output base random key df24325345345df",
         "scenario_type": "general"
     },
     {
@@ -117,27 +169,7 @@ router_scenario_type_samples = [
         "scenario_type": "general"
     },
     {
-        "input": "return base random 2435tdvxvxvd",
-        "scenario_type": "general"  
-    },  
-    {
-        "input": "return base random 3rgff546tth",
-        "scenario_type": "general"
-    },
-    {
-        "input": "return member random dfgfhttfdgvxcvsdgdf",
-        "scenario_type": "general"
-    },
-    {
-        "input": "return member random fdgdfgdfgdfgf",
-        "scenario_type": "general"
-    },
-    {
-        "input": "return member random gdfgdfgdfsgfdsg",
-        "scenario_type": "general"
-    },
-    {
-        "input": "return member random dfgdfvswereew",
+        "input": "return member random: dfgfhttfdgvxcvsdgdf",
         "scenario_type": "general"
     },
     {
@@ -146,10 +178,6 @@ router_scenario_type_samples = [
     },
     {
         "input": "return member random efs45454gdf",
-        "scenario_type": "general"
-    },
-    {
-        "input": "return member random d54t6et344fg",
         "scenario_type": "general"
     },
     {
